@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Clothing Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #fff;
+            color: #111;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            padding: 2.5rem 1.5rem;
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .row {
+            display: flex;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 0.7rem 0.9rem;
+            font-size: 0.85rem;
+            font-family: monospace;
+            color: #111;
+            min-width: 0;
+        }
+
+        input::placeholder { color: #bbb; }
+
+        button.go {
+            background: #111;
+            color: #fff;
+            border: none;
+            padding: 0 1.1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        button.go:hover { background: #333; }
+        button.go:disabled { background: #ccc; cursor: not-allowed; }
+
+        #result { display: none; margin-top: 2rem; }
+        #result.on { display: block; }
+
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid #e0e0e0;
+            border-top-color: #111;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 3rem auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #templateArea { display: none; }
+        #templateArea.on { display: block; }
+
+        img {
+            width: 100%;
+            display: block;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            image-rendering: pixelated;
+            background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+        }
+
+        .acts { margin-top: 0.75rem; }
+
+        .acts button {
+            background: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-family: inherit;
+            color: #555;
+        }
+
+        .acts button:hover { border-color: #111; color: #111; }
+
+        #errorBox {
+            display: none;
+            font-size: 0.75rem;
+            color: #999;
+            font-family: monospace;
+            padding: 1rem 0;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        #errorBox.on { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="row">
+    <input type="text" id="urlInput" placeholder="roblox.com/catalog/... or asset ID"
+        onkeydown="if(event.key==='Enter')go()" />
+    <button class="go" id="btn" onclick="go()">Extract</button>
+</div>
+
+<div id="result">
+    <div class="spinner" id="spin" style="display:none"></div>
+    <div id="templateArea">
+        <img id="img" alt="" />
+        <div class="acts">
+            <button onclick="dl()">Download</button>
+        </div>
+    </div>
+    <div id="errorBox"></div>
+</div>
+
+<script>
+((() => {
+    const _h = atob('aHR0cHM6Ly9jbG90aGluZy10ZW1wbGF0ZS1leHRyYWN0b3IubWUtYjQwLndvcmtlcnMuZGV2Lw==');
+    const _$ = id => document.getElementById(id);
+    const _pat = [
+        /roblox\.com\/catalog\/(\d+)/,
+        /roblox\.com\/(?:library|asset|games).*[?&]id=(\d+)/i,
+        /[?&]id=(\d+)/, /\/(\d+)(?:\/|$)/, /^(\d+)$/
+    ];
+
+    let _tid, _url, _blob, _last;
+    const _cache = {};
+    const _inp = _$('urlInput'), _btn = _$('btn');
+
+    const _xid = s => { for (const p of _pat) { const m = s.trim().match(p); if (m) return m[1]; } return null; };
+
+    _inp.addEventListener('input', () => { _btn.disabled = _inp.value.trim() === _last; });
+
+    const _req = url => fetch(_h + '?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(9e3) })
+        .then(r => { if (!r.ok) throw new Error(r.status); return r; });
+
+    const _cdn = id => _req(`https://assetdelivery.roblox.com/v2/assetId/${id}`)
+        .then(r => r.json())
+        .then(d => {
+            const loc = d.location ?? d.locations?.[0]?.location ?? null;
+            if (!loc) throw new Error('unresolved:' + id);
+            return loc;
+        });
+
+    const _ui = (loading, area, err) => {
+        _$('result').classList.add('on');
+        _$('spin').style.display = loading ? 'block' : 'none';
+        _$('templateArea').className = area ? 'on' : '';
+        _$('errorBox').className = err ? 'on' : '';
+    };
+
+    const _png = async (url, cid) => {
+        const el = _$('img');
+        el.src = '';
+        try {
+            const bmp = await createImageBitmap(await _req(url).then(r => r.blob()));
+            const cv = Object.assign(document.createElement('canvas'), { width: bmp.width, height: bmp.height });
+            cv.getContext('2d').drawImage(bmp, 0, 0);
+            if (_blob) URL.revokeObjectURL(_blob);
+            _blob = await new Promise(res => cv.toBlob(b => res(URL.createObjectURL(b)), 'image/png'));
+            el.src = _blob;
+            if (cid && _cache[cid]) _cache[cid].blobUrl = _blob;
+        } catch { el.src = url; }
+    };
+
+    const _render = (type, tid, url, blobUrl, cid) => {
+        _ui(false, true, false);
+        if (blobUrl) { _blob = blobUrl; _$('img').src = blobUrl; }
+        else _png(url, cid);
+    };
+
+    const _err = msg => { _ui(false, false, true); _$('errorBox').textContent = msg; };
+
+    const go = async () => {
+        const val = _inp.value.trim();
+        const id = _xid(val);
+        if (!id) return _err('No asset ID found.');
+
+        if (_cache[id]) {
+            const e = _cache[id];
+            _tid = e.tid; _url = e.url; _last = val; _btn.disabled = true;
+            return _render(e.type, e.tid, e.url, e.blobUrl, id);
+        }
+
+        _ui(true, false, false); _btn.disabled = true; _last = val;
+
+        try {
+            const base = await _cdn(id);
+            const raw  = await _req(base).then(r => r.text());
+
+            if (!raw.trimStart().startsWith('<')) {
+                _tid = id; _url = base;
+                _cache[id] = { type: 'T-Shirt', tid: id, url: base };
+                return _render('T-Shirt', id, base, null, id);
+            }
+
+            const xml = new DOMParser().parseFromString(raw, 'text/xml');
+            if (xml.querySelector('parsererror')) throw new Error('Not a classic clothing item.');
+
+            const sh = xml.querySelector('Item[class="Shirt"]');
+            const pa = xml.querySelector('Item[class="Pants"]');
+            let tp = 'Classic', el = null;
+
+            if (sh) { tp = 'Shirt';  el = sh.querySelector('Content[name="ShirtTemplate"] url'); }
+            else if (pa) { tp = 'Pants'; el = pa.querySelector('Content[name="PantsTemplate"] url'); }
+            if (!el) for (const n of xml.querySelectorAll('url'))
+                if (n.textContent.includes('roblox.com/asset')) { el = n; break; }
+            if (!el) throw new Error('No template texture found.');
+
+            const tid = _xid(el.textContent.trim());
+            if (!tid) throw new Error('Could not parse texture ID.');
+
+            const tUrl = await _cdn(tid);
+            _tid = tid; _url = tUrl;
+            _cache[id] = { type: tp, tid, url: tUrl };
+            _render(tp, tid, tUrl, null, id);
+
+        } catch (e) { _err(e.message); _last = null; _btn.disabled = false; }
+    };
+
+    const dl = async () => {
+        if (!_url) return;
+        const src = _blob || URL.createObjectURL(await _req(_url).then(r => r.blob()));
+        Object.assign(document.createElement('a'), { href: src, download: `template-${_tid}.png` }).click();
+    };
+
+    Object.assign(window, { go, dl });
+})());
+</script>
+</body>
+</html>
