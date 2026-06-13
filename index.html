@@ -23,6 +23,8 @@
       --shadow:   0 24px 60px -20px rgba(0,0,0,.18),
                   0 8px 20px -12px rgba(0,0,0,.12);
       --pad:      2.4rem;
+      --bleed:    0.7rem;
+      --panel-w:  600px;
       --ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -52,12 +54,13 @@
     .card {
       position: relative;
       width: 100%;
-      max-width: 400px;
+      max-width: 450px;
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: var(--pad, 2.4rem);
       animation: rise 0.6s var(--ease) both;
+      transition: transform 0.4s var(--ease);
     }
     @keyframes rise {
       from { opacity: 0; transform: translateY(12px); }
@@ -66,40 +69,6 @@
     @media (prefers-reduced-motion: reduce) {
       .card { animation: none; }
       .dot.pulsing { animation: none; }
-    }
-
-    .content { opacity: 0; transition: opacity 0.45s var(--ease); }
-    body.ready .content { opacity: 1; }
-
-    .skeleton {
-      position: absolute;
-      inset: var(--pad, 2.4rem);
-      display: flex;
-      flex-direction: column;
-      transition: opacity 0.35s var(--ease);
-    }
-    body.ready .skeleton { opacity: 0; pointer-events: none; }
-
-    .sk {
-      border-radius: 6px;
-      background: linear-gradient(90deg,
-        var(--line) 25%, var(--hover) 50%, var(--line) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease infinite;
-    }
-    @keyframes shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-    .sk-name   { width: 55%; height: 2rem; }
-    .sk-status { width: 42%; height: 0.85rem; margin-top: 1.3rem; }
-    .sk-label  { width: 22%; height: 0.7rem;  margin-top: 1.9rem; }
-    .sk-tool   { width: 100%; height: 1.1rem; margin-top: 0.95rem; }
-    .sk-email  { width: 100%; height: 2.65rem; border-radius: 11px;
-                 margin-top: 1.8rem; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .sk { animation: none; }
     }
 
     .head { margin-bottom: 1.6rem; }
@@ -159,8 +128,8 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.7rem 0.6rem;
-      margin: 0 -0.6rem;
+      padding: 0.7rem var(--bleed);
+      margin: 0 calc(var(--bleed) * -1);
       border-radius: 10px;
       color: var(--ink);
       text-decoration: none;
@@ -183,15 +152,49 @@
       color: var(--ink);
     }
 
+    .open-panel {
+      margin: 1.6rem calc(var(--bleed) * -1) 0;
+      width: calc(100% + var(--bleed) * 2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.75rem var(--bleed);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+    }
+    .open-panel:hover, .open-panel:focus-visible {
+      background: var(--hover);
+      border-color: var(--faint);
+      outline: none;
+    }
+    .open-panel .arrow {
+      color: var(--faint);
+      transition: transform 0.16s var(--ease), color 0.16s var(--ease);
+    }
+    .open-panel:hover .arrow, .open-panel:focus-visible .arrow {
+      transform: translateX(3px);
+      color: var(--ink);
+    }
+
     .footer {
-      margin-top: 1.6rem;
+      margin-top: 0.7rem;
     }
     .email {
+      margin: 0 calc(var(--bleed) * -1);
+      width: calc(100% + var(--bleed) * 2);
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      padding: 0.75rem 1rem;
+      padding: 0.75rem var(--bleed);
       border-radius: 11px;
       background: var(--ink);
       color: var(--card);
@@ -201,6 +204,194 @@
       transition: opacity 0.16s var(--ease);
     }
     .email:hover, .email:focus-visible { opacity: 0.85; outline: none; }
+
+    .panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: var(--panel-w);
+      max-width: 92vw;
+      background: var(--card);
+      border-left: 1px solid var(--line);
+      transform: translateX(100%);
+      transition: transform 0.4s var(--ease);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    body.panel-open .panel { transform: translateX(0); }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.7rem var(--pad, 2.4rem);
+      border-bottom: 1px solid var(--line);
+      flex: none;
+    }
+    .panel-head h2 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+    .panel-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 8px;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease);
+    }
+    .panel-close:hover, .panel-close:focus-visible {
+      background: var(--hover);
+      color: var(--ink);
+      outline: none;
+    }
+
+    .panel-body {
+      padding: 1.9rem var(--pad, 2.4rem) 2.4rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .p-section + .p-section { margin-top: 2.2rem; }
+    .p-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 1rem;
+    }
+    .p-sec-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .p-sec-head .p-eyebrow { margin-bottom: 0; }
+    .p-jump {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      padding: 0.3rem 0.65rem;
+      border-radius: 100px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease),
+                  border-color 0.16s var(--ease);
+    }
+    .p-jump:hover, .p-jump:focus-visible {
+      background: var(--hover);
+      color: var(--ink);
+      border-color: var(--faint);
+      outline: none;
+    }
+    .p-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 1rem;
+    }
+    .p-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.1rem 1.2rem;
+      cursor: pointer;
+      transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+    }
+    .p-card:hover, .p-card:focus-visible {
+      background: var(--hover);
+      border-color: var(--faint);
+      outline: none;
+    }
+    .p-title { display: block; font-size: 0.98rem; font-weight: 600; }
+    .p-meta { font-size: 0.76rem; color: var(--faint); white-space: nowrap; }
+    .p-preview {
+      margin-top: 0.45rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .p-preview.is-clip {
+      -webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 50%, transparent 100%);
+    }
+
+    .p-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.3rem 0;
+      margin-bottom: 1.2rem;
+      transition: color 0.16s var(--ease);
+    }
+    .p-back:hover, .p-back:focus-visible { color: var(--ink); outline: none; }
+    .p-detail-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.4rem;
+    }
+    .p-detail-head h3 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+    .p-body {
+      margin-top: 0.5rem;
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .p-body p { margin: 0.5rem 0 0; }
+    .p-body p:first-child { margin-top: 0; }
+    .p-body ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+    .p-body li { margin: 0.2rem 0; }
+    .p-body h3, .p-body h4, .p-body h5, .p-body h6 {
+      font-size: 0.9rem; font-weight: 600; color: var(--ink);
+      margin: 0.7rem 0 0.2rem;
+    }
+    .p-body a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+    .p-body img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 0.8rem 0 0;
+    }
+    .p-body code {
+      font-size: 0.82em; background: var(--hover);
+      padding: 0.1em 0.35em; border-radius: 4px;
+    }
+    .p-msg { font-size: 0.85rem; color: var(--faint); grid-column: 1 / -1; }
+
+    @media (min-width: 1200px) {
+      body.panel-open .card { transform: translateX(calc(var(--panel-w) / -2)); }
+    }
+
+    @media (max-width: 1199px) {
+      .panel {
+        width: 100%;
+        max-width: 100%;
+        border-left: none;
+      }
+    }
 
     @media (max-width: 480px) {
       body { overflow: auto; padding: 1.25rem; }
@@ -213,47 +404,81 @@
 
   <main class="card">
 
-    <div class="skeleton" aria-hidden="true">
-      <div class="sk sk-name"></div>
-      <div class="sk sk-status"></div>
-      <div class="sk sk-label"></div>
-      <div class="sk sk-tool"></div>
-      <div class="sk sk-email"></div>
-    </div>
+    <header class="head">
+      <div class="name"><span class="dot"></span>Cylian</div>
 
-    <div class="content">
+      <div class="status">
+        <span>Paris, France</span>
+        <span class="sep"></span>
+        <span class="time mono" id="time">—</span>
+      </div>
+    </header>
 
-      <header class="head">
-        <div class="name"><span class="dot"></span>Cylian</div>
+    <p class="label">Tools</p>
+    <nav>
+      <ul class="tools">
+        <li>
+          <a href="https://cylian.nl/tools/clothing-extractor?ref=home" target="_blank" rel="noopener">
+            <span class="t-main">
+              <span class="t-name">Roblox Clothing Downloader</span>
+            </span>
+            <span class="arrow">↗</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
 
-        <div class="status">
-          <span>Paris, France</span>
-          <span class="sep"></span>
-          <span class="time mono" id="time">—</span>
-        </div>
-      </header>
+    <button class="open-panel" id="openPanel" aria-haspopup="dialog"
+            aria-controls="panel" aria-expanded="false">
+      Projects &amp; Experience
+      <span class="arrow">→</span>
+    </button>
 
-      <p class="label">Tools</p>
-      <nav>
-        <ul class="tools">
-          <li>
-            <a href="https://cylian.nl/tools/clothing-extractor" target="_blank" rel="noopener">
-              <span class="t-main">
-                <span class="t-name">Roblox Clothing Downloader</span>
-              </span>
-              <span class="arrow">↗</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-
-      <footer class="footer">
-        <a class="email" href="mailto:hi@cylian.nl">hi@cylian.nl</a>
-      </footer>
-
-    </div>
+    <footer class="footer">
+      <a class="email" href="mailto:hi@cylian.nl">hi@cylian.nl</a>
+    </footer>
 
   </main>
+
+  <aside class="panel" id="panel" role="dialog"
+         aria-labelledby="panelTitle" aria-hidden="true">
+    <div class="panel-head">
+      <h2 id="panelTitle">Projects &amp; Experience</h2>
+      <button class="panel-close" id="closePanel" aria-label="Close panel">&times;</button>
+    </div>
+
+    <div class="panel-body">
+
+      <div id="panelList">
+        <section class="p-section">
+          <div class="p-sec-head">
+            <p class="p-eyebrow">Projects</p>
+            <button class="p-jump" id="jumpExp" type="button" hidden>Experience ↓</button>
+          </div>
+          <div class="p-list" id="projectsList">
+            <p class="p-msg">Loading…</p>
+          </div>
+        </section>
+
+        <section class="p-section" id="experienceSection">
+          <p class="p-eyebrow">Experience</p>
+          <div class="p-list" id="experienceList">
+            <p class="p-msg">Loading…</p>
+          </div>
+        </section>
+      </div>
+
+      <div id="panelDetail" hidden>
+        <button class="p-back" id="panelBack" type="button">← Back</button>
+        <div class="p-detail-head">
+          <h3 id="detailTitle"></h3>
+          <span class="p-meta" id="detailMeta"></span>
+        </div>
+        <div class="p-body" id="detailBody"></div>
+      </div>
+
+    </div>
+  </aside>
 
   <script>
     (function () {
@@ -270,6 +495,252 @@
 
   <script>
     (function () {
+      var openBtn = document.getElementById('openPanel');
+      var closeBtn = document.getElementById('closePanel');
+      var panel = document.getElementById('panel');
+
+      function open() {
+        document.body.classList.add('panel-open');
+        panel.setAttribute('aria-hidden', 'false');
+        openBtn.setAttribute('aria-expanded', 'true');
+        closeBtn.focus();
+      }
+      function close() {
+        document.body.classList.remove('panel-open');
+        panel.setAttribute('aria-hidden', 'true');
+        openBtn.setAttribute('aria-expanded', 'false');
+        openBtn.focus();
+      }
+
+      openBtn.addEventListener('click', open);
+      closeBtn.addEventListener('click', close);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.body.classList.contains('panel-open')) close();
+      });
+      document.addEventListener('click', function (e) {
+        if (!document.body.classList.contains('panel-open')) return;
+        if (panel.contains(e.target) || openBtn.contains(e.target)) return;
+        close();
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var REPO = 'cyliannl/cylian.nl';
+      var openBtn = document.getElementById('openPanel');
+      var loaded = false;
+
+      function esc(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function inline(s) {
+        return s
+          .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>');
+      }
+
+      function mdToHtml(md) {
+        var lines = esc(md).split('\n');
+        var out = '', inList = false;
+        lines.forEach(function (line) {
+          if (/^\s*[-*]\s+/.test(line)) {
+            if (!inList) { out += '<ul>'; inList = true; }
+            out += '<li>' + inline(line.replace(/^\s*[-*]\s+/, '')) + '</li>';
+            return;
+          }
+          if (inList) { out += '</ul>'; inList = false; }
+          var h = /^(#{1,4})\s+(.*)$/.exec(line);
+          if (h) {
+            var lvl = Math.min(h[1].length + 2, 6);
+            out += '<h' + lvl + '>' + inline(h[2]) + '</h' + lvl + '>';
+            return;
+          }
+          if (line.trim() === '') return;
+          out += '<p>' + inline(line) + '</p>';
+        });
+        if (inList) out += '</ul>';
+        return out;
+      }
+
+      function parse(text) {
+        var fm = {}, body = text.replace(/\r\n/g, '\n');
+        var m = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(body);
+        if (m) {
+          m[1].split('\n').forEach(function (l) {
+            var i = l.indexOf(':');
+            if (i > -1) {
+              fm[l.slice(0, i).trim().toLowerCase()] =
+                l.slice(i + 1).trim().replace(/^["']|["']$/g, '');
+            }
+          });
+          body = m[2];
+        }
+        return { fm: fm, body: body.trim() };
+      }
+
+      function plain(md) {
+        return md
+          .replace(/`+/g, '')
+          .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          .replace(/[*_>#]/g, '')
+          .replace(/^\s*[-+]\s+/gm, '')
+          .replace(/\s*\n\s*/g, ' ')
+          .trim();
+      }
+
+      var MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                    'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+      function dateKey(name) {
+        var lower = name.toLowerCase();
+        var ym = lower.match(/\b(19|20)\d{2}\b/);
+        if (!ym) return -1;
+        var month = 0;
+        for (var i = 0; i < 12; i++) {
+          if (lower.indexOf(MONTHS[i]) > -1) { month = i + 1; break; }
+        }
+        return parseInt(ym[0], 10) * 100 + month;
+      }
+
+      function splitName(filename) {
+        var base = filename.replace(/\.md$/i, '');
+        var dash = base.indexOf(' - ');
+        if (dash > -1) {
+          return { name: base.slice(0, dash).trim(), date: base.slice(dash + 3).trim() };
+        }
+        return { name: base.replace(/[-_]+/g, ' ').trim(), date: '' };
+      }
+
+      function makeItem(p, filename) {
+        var fn = splitName(filename);
+        var title = p.fm.title, body = p.body;
+        if (!title) {
+          var hm = /^#\s+(.+)$/m.exec(body);
+          if (hm) { title = hm[1].trim(); body = body.replace(hm[0], '').trim(); }
+        }
+        if (!title) title = fn.name;
+        var meta = p.fm.date || p.fm.year || p.fm.period || p.fm.when || fn.date;
+        var bodyHtml = p.fm.description ? '<p>' + esc(p.fm.description) + '</p>' : mdToHtml(body);
+        var preview = p.fm.description ? p.fm.description : plain(body);
+        return { title: title, meta: meta, bodyHtml: bodyHtml, preview: preview };
+      }
+
+      function cardHtml(item, idx) {
+        var h = '<article class="p-card" data-i="' + idx + '" tabindex="0" role="button">';
+        h += '<span class="p-title">' + esc(item.title) + '</span>';
+        if (item.preview) h += '<p class="p-preview">' + esc(item.preview) + '</p>';
+        return h + '</article>';
+      }
+
+      var store = [];
+
+      function fill(dir, el, latestFirst) {
+        return fetch('https://api.github.com/repos/' + REPO + '/contents/' + dir)
+          .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+          .then(function (items) {
+            var mds = items
+              .filter(function (it) { return it.type === 'file' && /\.md$/i.test(it.name); })
+              .sort(function (a, b) {
+                if (latestFirst) {
+                  var d = dateKey(b.name) - dateKey(a.name);
+                  if (d) return d;
+                }
+                return a.name.localeCompare(b.name);
+              });
+            if (!mds.length) { el.innerHTML = '<p class="p-msg">Nothing here yet.</p>'; return; }
+            return Promise.all(mds.map(function (it) {
+              return fetch(it.download_url)
+                .then(function (r) { return r.text(); })
+                .then(function (t) { return makeItem(parse(t), it.name); });
+            })).then(function (results) {
+              el.innerHTML = results.map(function (item) {
+                var idx = store.push(item) - 1;
+                return cardHtml(item, idx);
+              }).join('');
+              el.querySelectorAll('.p-preview').forEach(function (p) {
+                if (p.scrollHeight - p.clientHeight > 1) p.classList.add('is-clip');
+              });
+            });
+          })
+          .catch(function () { el.innerHTML = '<p class="p-msg">Couldn’t load right now.</p>'; });
+      }
+
+      var listView = document.getElementById('panelList');
+      var detailView = document.getElementById('panelDetail');
+      var backBtn = document.getElementById('panelBack');
+      var detailTitle = document.getElementById('detailTitle');
+      var detailMeta = document.getElementById('detailMeta');
+      var detailBody = document.getElementById('detailBody');
+      var panelBody = document.querySelector('.panel-body');
+      var jumpBtn = document.getElementById('jumpExp');
+      var expSec = document.getElementById('experienceSection');
+
+      function updateJump() {
+        if (detailView.hidden === false) { jumpBtn.hidden = true; return; }
+        var rect = expSec.getBoundingClientRect();
+        var cont = panelBody.getBoundingClientRect();
+        jumpBtn.hidden = rect.top < cont.bottom - 24;
+      }
+
+      function showDetail(idx) {
+        var item = store[idx];
+        if (!item) return;
+        detailTitle.textContent = item.title;
+        detailMeta.textContent = item.meta || '';
+        detailMeta.style.display = item.meta ? '' : 'none';
+        detailBody.innerHTML = item.bodyHtml || '<p class="p-msg">No content.</p>';
+        listView.hidden = true;
+        detailView.hidden = false;
+        jumpBtn.hidden = true;
+        panelBody.scrollTop = 0;
+        backBtn.focus();
+      }
+      function showList() {
+        detailView.hidden = true;
+        listView.hidden = false;
+        panelBody.scrollTop = 0;
+        updateJump();
+      }
+
+      listView.addEventListener('click', function (e) {
+        var c = e.target.closest('.p-card');
+        if (c) showDetail(+c.getAttribute('data-i'));
+      });
+      listView.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          var c = e.target.closest('.p-card');
+          if (c) { e.preventDefault(); showDetail(+c.getAttribute('data-i')); }
+        }
+      });
+      backBtn.addEventListener('click', showList);
+
+      jumpBtn.addEventListener('click', function () {
+        expSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      panelBody.addEventListener('scroll', updateJump);
+      window.addEventListener('resize', updateJump);
+
+      function load() {
+        if (loaded) return;
+        loaded = true;
+        Promise.all([
+          fill('projects', document.getElementById('projectsList')),
+          fill('experience', document.getElementById('experienceList'), true)
+        ]).then(updateJump);
+      }
+
+      openBtn.addEventListener('click', function () { showList(); load(); });
+    })();
+  </script>
+
+  <script>
+    (function () {
       var DISCORD_ID = '830200981366112287';
       var dot = document.querySelector('.dot');
 
@@ -280,21 +751,6 @@
         offline: { dot: '#b8b8b0', ring: 'rgba(0,0,0,0)'        }
       };
 
-      var done = { fonts: false, status: false };
-      function reveal() {
-        if (done.fonts && done.status) document.body.classList.add('ready');
-      }
-
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function () { done.fonts = true; reveal(); });
-      } else {
-        done.fonts = true;
-      }
-      setTimeout(function () {
-        done.fonts = done.status = true;
-        document.body.classList.add('ready');
-      }, 4000);
-
       function setStatus(status) {
         var c = COLORS[status] || COLORS.offline;
         dot.style.background = c.dot;
@@ -302,19 +758,16 @@
         dot.classList.toggle('pulsing', status && status !== 'offline');
       }
 
-      function poll(first) {
+      function poll() {
         fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID)
           .then(function (r) { return r.json(); })
           .then(function (j) {
             setStatus(j && j.success && j.data ? j.data.discord_status : 'offline');
           })
-          .catch(function () { setStatus('offline'); })
-          .finally(function () {
-            if (first) { done.status = true; reveal(); }
-          });
+          .catch(function () { setStatus('offline'); });
       }
 
-      poll(true);
+      poll();
       setInterval(poll, 30000);
     })();
   </script>
