@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox Clothing Template Extractor</title>
+    <title>Roblox Clothing Template Downloader</title>
     <meta name="description" content="Extract and download the template texture from any Roblox classic clothing item. Supports shirts, pants, and T-shirts. Paste a catalog URL or asset ID to get the PNG template instantly.">
     <meta name="keywords" content="roblox clothing template, roblox shirt template, roblox pants template, roblox template extractor, roblox asset downloader, roblox classic clothing">
     <meta name="robots" content="index, follow">
@@ -22,6 +22,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        html, body { height: 100%; }
         body {
             background: #fff;
             color: #111;
@@ -30,6 +31,9 @@
             padding: 2.5rem 1.5rem;
             max-width: 560px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .row {
@@ -37,7 +41,10 @@
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             overflow: hidden;
+            transition: border-color 0.15s;
+            animation: intro 0.5s cubic-bezier(0.4,0,0.2,1) both;
         }
+        .row:focus-within { border-color: #aaa; }
 
         input[type="text"] {
             flex: 1;
@@ -64,11 +71,12 @@
             font-family: inherit;
         }
 
+        button.go { transition: background 0.15s; }
         button.go:hover { background: #333; }
         button.go:disabled { background: #ccc; cursor: not-allowed; }
 
         #result { display: none; margin-top: 2rem; }
-        #result.on { display: block; }
+        #result.on { display: block; animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1); }
 
         .spinner {
             width: 18px; height: 18px;
@@ -79,17 +87,44 @@
             margin: 3rem auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes intro {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shine {
+            from { transform: translateX(-140%) skewX(-12deg); }
+            to   { transform: translateX(260%) skewX(-12deg); }
+        }
 
         #templateArea { display: none; }
-        #templateArea.on { display: block; }
+        #templateArea.on { display: block; animation: fadeUp 0.45s cubic-bezier(0.4,0,0.2,1); }
 
+        .img-wrap {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+        }
+        .img-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            width: 50%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18) 40%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.18) 60%, transparent);
+            transform: translateX(-120%) skewX(-12deg);
+            pointer-events: none;
+        }
+        .img-wrap.shining::after { animation: shine 1.6s cubic-bezier(0.25,0.1,0.25,1) forwards; }
         img {
             width: 100%;
             display: block;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
             image-rendering: pixelated;
-            background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+            transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1);
         }
 
         .acts { margin-top: 0.75rem; }
@@ -103,8 +138,11 @@
             cursor: pointer;
             font-family: inherit;
             color: #555;
+            transition: border-color 0.15s, color 0.15s;
+            animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
         }
-
+        .acts button:nth-child(1) { animation-delay: 0.15s; }
+        .acts button:nth-child(2) { animation-delay: 0.27s; }
         .acts button:hover { border-color: #111; color: #111; }
 
         #errorBox {
@@ -117,11 +155,30 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
-        #errorBox.on { display: block; }
+        #errorBox.on { display: block; animation: fadeUp 0.2s ease; }
+
+        #backBtn {
+            display: none;
+            align-self: flex-start;
+            margin-bottom: 0.75rem;
+            background: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+            font-family: inherit;
+            color: #555;
+            text-decoration: none;
+            transition: border-color 0.15s, color 0.15s;
+            animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
+        }
+        #backBtn:hover { border-color: #111; color: #111; }
+        #backBtn.on { display: block; }
     </style>
 </head>
 <body>
 
+<a id="backBtn" href="https://cylian.nl">← back</a>
 <div class="row">
     <input type="text" id="urlInput" placeholder="roblox.com/catalog/... or asset ID"
         onkeydown="if(event.key==='Enter')go()" autocomplete="new-password" spellcheck="false" />
@@ -131,7 +188,7 @@
 <div id="result">
     <div class="spinner" id="spin" style="display:none"></div>
     <div id="templateArea">
-        <img id="img" alt="" />
+        <div class="img-wrap" id="imgWrap"><img id="img" alt="" /></div>
         <div class="acts">
             <button onclick="dl()">Download</button>
             <button onclick="half()">Remove template/watermark</button>
@@ -254,8 +311,16 @@
     const half = async () => {
         const el = _$('img');
         if (!el.src) return;
+        const wrap = _$('imgWrap');
+        const src = el.src;
+        el.style.opacity = '0';
+        wrap.classList.remove('shining');
+        void wrap.offsetWidth;
+        wrap.classList.add('shining');
+        wrap.addEventListener('animationend', () => wrap.classList.remove('shining'), { once: true });
+        await new Promise(r => setTimeout(r, 350));
         const img = new Image();
-        img.src = el.src;
+        img.src = src;
         await new Promise(res => img.onload = res);
         const cv = Object.assign(document.createElement('canvas'), { width: 585, height: 559 });
         const ctx = cv.getContext('2d');
@@ -292,7 +357,11 @@
         if (_blob) URL.revokeObjectURL(_blob);
         _blob = await new Promise(res => cv.toBlob(b => res(URL.createObjectURL(b)), 'image/png'));
         el.src = _blob;
+        await new Promise(r => { el.onload = r; });
+        el.style.opacity = '1';
     };
+
+    if (window.location.search) _$('backBtn').classList.add('on');
 
     Object.assign(window, { go, dl, half });
 })());
