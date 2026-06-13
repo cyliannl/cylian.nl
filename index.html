@@ -1,1 +1,323 @@
-hi
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cylian - https://cylian.nl</title>
+  <meta name="description" content="Cylian — Paris, France. Tools I make." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:       #ffffff;
+      --card:     #ffffff;
+      --ink:      #15150f;
+      --muted:    #76766e;
+      --faint:    #a6a69e;
+      --line:     #ebebe5;
+      --hover:    #f4f4f1;
+      --dot:      #3fae5a;
+      --shadow:   0 24px 60px -20px rgba(0,0,0,.18),
+                  0 8px 20px -12px rgba(0,0,0,.12);
+      --pad:      2.4rem;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .mono { font-variant-numeric: tabular-nums; }
+
+    .card {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: var(--pad, 2.4rem);
+      animation: rise 0.6s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card { animation: none; }
+      .dot.pulsing { animation: none; }
+    }
+
+    .content { opacity: 0; transition: opacity 0.45s var(--ease); }
+    body.ready .content { opacity: 1; }
+
+    .skeleton {
+      position: absolute;
+      inset: var(--pad, 2.4rem);
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.35s var(--ease);
+    }
+    body.ready .skeleton { opacity: 0; pointer-events: none; }
+
+    .sk {
+      border-radius: 6px;
+      background: linear-gradient(90deg,
+        var(--line) 25%, var(--hover) 50%, var(--line) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .sk-name   { width: 55%; height: 2rem; }
+    .sk-status { width: 42%; height: 0.85rem; margin-top: 1.3rem; }
+    .sk-label  { width: 22%; height: 0.7rem;  margin-top: 1.9rem; }
+    .sk-tool   { width: 100%; height: 1.1rem; margin-top: 0.95rem; }
+    .sk-email  { width: 100%; height: 2.65rem; border-radius: 11px;
+                 margin-top: 1.8rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sk { animation: none; }
+    }
+
+    .head { margin-bottom: 1.6rem; }
+
+    .name {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .tagline {
+      margin-top: 0.45rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .status {
+      margin-top: 1.2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .status .time { color: var(--ink); font-weight: 500; }
+    .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      flex: none;
+      background: var(--faint);
+      --ring: rgba(0,0,0,0);
+      transition: background 0.3s var(--ease);
+    }
+    .dot.pulsing {
+      box-shadow: 0 0 0 0 var(--ring);
+      animation: pulse 2.6s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 var(--ring); }
+      70%  { box-shadow: 0 0 0 7px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+    .status .sep { width: 1px; height: 11px; background: var(--line); }
+
+    .label {
+      font-size: 0.66rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 0.4rem;
+    }
+
+    .tools { list-style: none; }
+    .tools a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.6rem;
+      margin: 0 -0.6rem;
+      border-radius: 10px;
+      color: var(--ink);
+      text-decoration: none;
+      transition: background 0.16s var(--ease);
+    }
+    .tools a:hover, .tools a:focus-visible {
+      background: var(--hover);
+      outline: none;
+    }
+    .tools .num { font-size: 0.72rem; color: var(--faint); }
+    .tools .t-main { flex: 1; }
+    .tools .t-name { font-size: 0.95rem; font-weight: 500; }
+    .tools .t-desc { font-size: 0.78rem; color: var(--muted); }
+    .tools .arrow {
+      color: var(--faint);
+      transition: transform 0.16s var(--ease), color 0.16s var(--ease);
+    }
+    .tools a:hover .arrow, .tools a:focus-visible .arrow {
+      transform: translate(2px, -2px);
+      color: var(--ink);
+    }
+
+    .footer {
+      margin-top: 1.6rem;
+    }
+    .email {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 11px;
+      background: var(--ink);
+      color: var(--card);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: opacity 0.16s var(--ease);
+    }
+    .email:hover, .email:focus-visible { opacity: 0.85; outline: none; }
+
+    @media (max-width: 480px) {
+      body { overflow: auto; padding: 1.25rem; }
+      .card { --pad: 1.8rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="card">
+
+    <div class="skeleton" aria-hidden="true">
+      <div class="sk sk-name"></div>
+      <div class="sk sk-status"></div>
+      <div class="sk sk-label"></div>
+      <div class="sk sk-tool"></div>
+      <div class="sk sk-email"></div>
+    </div>
+
+    <div class="content">
+
+      <header class="head">
+        <div class="name"><span class="dot"></span>Cylian</div>
+
+        <div class="status">
+          <span>Paris, France</span>
+          <span class="sep"></span>
+          <span class="time mono" id="time">—</span>
+        </div>
+      </header>
+
+      <p class="label">Tools</p>
+      <nav>
+        <ul class="tools">
+          <li>
+            <a href="https://cylian.nl/tools/clothing-extractor" target="_blank" rel="noopener">
+              <span class="t-main">
+                <span class="t-name">Roblox Clothing Downloader</span>
+              </span>
+              <span class="arrow">↗</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <footer class="footer">
+        <a class="email" href="mailto:hi@cylian.nl">hi@cylian.nl</a>
+      </footer>
+
+    </div>
+
+  </main>
+
+  <script>
+    (function () {
+      var el = document.getElementById('time');
+      function tick() {
+        el.textContent = new Intl.DateTimeFormat('en-GB', {
+          hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris'
+        }).format(new Date());
+      }
+      tick();
+      setInterval(tick, 1000 * 15);
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var DISCORD_ID = '830200981366112287';
+      var dot = document.querySelector('.dot');
+
+      var COLORS = {
+        online:  { dot: '#3fae5a', ring: 'rgba(63,174,90,.45)'  },
+        idle:    { dot: '#f0b232', ring: 'rgba(240,178,50,.45)' },
+        dnd:     { dot: '#f23f43', ring: 'rgba(242,63,67,.45)'  },
+        offline: { dot: '#b8b8b0', ring: 'rgba(0,0,0,0)'        }
+      };
+
+      var done = { fonts: false, status: false };
+      function reveal() {
+        if (done.fonts && done.status) document.body.classList.add('ready');
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { done.fonts = true; reveal(); });
+      } else {
+        done.fonts = true;
+      }
+      setTimeout(function () {
+        done.fonts = done.status = true;
+        document.body.classList.add('ready');
+      }, 4000);
+
+      function setStatus(status) {
+        var c = COLORS[status] || COLORS.offline;
+        dot.style.background = c.dot;
+        dot.style.setProperty('--ring', c.ring);
+        dot.classList.toggle('pulsing', status && status !== 'offline');
+      }
+
+      function poll(first) {
+        fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID)
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            setStatus(j && j.success && j.data ? j.data.discord_status : 'offline');
+          })
+          .catch(function () { setStatus('offline'); })
+          .finally(function () {
+            if (first) { done.status = true; reveal(); }
+          });
+      }
+
+      poll(true);
+      setInterval(poll, 30000);
+    })();
+  </script>
+
+</body>
+</html>
