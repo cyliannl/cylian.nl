@@ -353,6 +353,12 @@
       border-color: var(--faint);
       outline: none;
     }
+    .p-card-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
     .p-title { display: block; font-size: 0.98rem; font-weight: 600; }
     .p-meta { font-size: 0.76rem; color: var(--faint); white-space: nowrap; }
     .p-preview {
@@ -751,16 +757,23 @@
         return { title: title, meta: meta, bodyHtml: bodyHtml, preview: preview };
       }
 
-      function cardHtml(item, idx) {
+      function cardHtml(item, idx, showMeta) {
         var h = '<article class="p-card" data-i="' + idx + '" tabindex="0" role="button">';
-        h += '<span class="p-title">' + esc(item.title) + '</span>';
+        if (showMeta && item.meta) {
+          h += '<div class="p-card-head">' +
+                 '<span class="p-title">' + esc(item.title) + '</span>' +
+                 '<span class="p-meta">' + esc(item.meta) + '</span>' +
+               '</div>';
+        } else {
+          h += '<span class="p-title">' + esc(item.title) + '</span>';
+        }
         if (item.preview) h += '<p class="p-preview">' + esc(item.preview) + '</p>';
         return h + '</article>';
       }
 
       var store = [];
 
-      function fill(dir, el, latestFirst) {
+      function fill(dir, el, latestFirst, showMeta) {
         return fetch('https://api.github.com/repos/' + REPO + '/contents/' + dir)
           .then(function (r) { if (!r.ok) throw 0; return r.json(); })
           .then(function (items) {
@@ -781,7 +794,7 @@
             })).then(function (results) {
               el.innerHTML = results.map(function (item) {
                 var idx = store.push(item) - 1;
-                return cardHtml(item, idx);
+                return cardHtml(item, idx, showMeta);
               }).join('');
               el.querySelectorAll('.p-preview').forEach(function (p) {
                 if (p.scrollHeight - p.clientHeight > 1) p.classList.add('is-clip');
@@ -851,7 +864,7 @@
         loaded = true;
         Promise.all([
           fill('projects', document.getElementById('projectsList')),
-          fill('experience', document.getElementById('experienceList'), true)
+          fill('experience', document.getElementById('experienceList'), true, true)
         ]).then(updateJump);
       }
 
