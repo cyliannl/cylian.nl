@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clock · cylian.nl</title>
+  <meta name="description" content="Clock, stopwatch and timer." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:    #ffffff;
+      --card:  #ffffff;
+      --ink:   #15150f;
+      --muted: #76766e;
+      --faint: #a6a69e;
+      --line:  #ebebe5;
+      --hover: #f4f4f1;
+      --alarm: #f23f43;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .card {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 2.4rem;
+      animation: rise 0.6s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card { animation: none; }
+      .display.done { animation: none; }
+    }
+
+    .home {
+      display: inline-block;
+      font-size: 0.78rem;
+      color: var(--faint);
+      text-decoration: none;
+      margin-bottom: 1.2rem;
+      transition: color 0.16s var(--ease);
+    }
+    .home:hover { color: var(--ink); }
+
+    /* segmented tabs */
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--hover);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 0.25rem;
+      margin-bottom: 2.2rem;
+    }
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease);
+    }
+    .tab.is-active {
+      background: var(--card);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(0,0,0,.07);
+    }
+
+    /* big readout */
+    .display {
+      font-size: clamp(2.6rem, 13vw, 3.7rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      text-align: center;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .display .cs { font-size: 0.5em; color: var(--muted); font-weight: 600; }
+    .display.done { animation: flash 1s ease-in-out infinite; }
+    @keyframes flash {
+      0%, 100% { color: var(--ink); }
+      50% { color: var(--alarm); }
+    }
+    .sub { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 0.8rem; }
+
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1.5rem; }
+    .chip {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.4rem 0.85rem;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease), border-color 0.16s var(--ease);
+    }
+    .chip:hover, .chip:focus-visible {
+      background: var(--hover);
+      color: var(--ink);
+      border-color: var(--faint);
+      outline: none;
+    }
+    .chip.is-on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+
+    .controls { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1.9rem; }
+    .btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.7rem 1.3rem;
+      border-radius: 11px;
+      cursor: pointer;
+      min-width: 94px;
+      transition: background 0.16s var(--ease), border-color 0.16s var(--ease), opacity 0.16s var(--ease);
+    }
+    .btn:hover, .btn:focus-visible { background: var(--hover); border-color: var(--faint); outline: none; }
+    .btn.primary { background: var(--ink); color: var(--card); border-color: var(--ink); }
+    .btn.primary:hover { background: var(--ink); opacity: 0.85; }
+    .btn.ghost { color: var(--muted); }
+    .btn:disabled { opacity: 0.35; cursor: default; background: transparent; border-color: var(--line); }
+
+    /* laps */
+    .laps {
+      list-style: none;
+      margin-top: 1.6rem;
+      max-height: 168px;
+      overflow-y: auto;
+    }
+    .laps li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      padding: 0.55rem 0;
+      border-top: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+    }
+    .laps .n { color: var(--faint); }
+    .laps .sp { color: var(--muted); margin-left: auto; }
+    .laps .tt { color: var(--ink); min-width: 5.5em; text-align: right; }
+    .laps .cs { font-size: 0.8em; color: var(--faint); }
+
+    /* timer inputs */
+    .time-input { display: flex; align-items: center; justify-content: center; }
+    .time-input input {
+      width: 1.7em;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      letter-spacing: inherit;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      padding: 0;
+    }
+    .time-input input:focus { outline: none; }
+    .time-input input[readonly] { cursor: default; }
+    .time-input .colon { color: var(--faint); }
+
+    @media (max-width: 480px) {
+      body { overflow: auto; padding: 1.25rem; }
+      .card { padding: 1.8rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="card">
+
+    <a class="home" href="/">← cylian.nl</a>
+
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-mode="clock" role="tab">Clock</button>
+      <button class="tab" data-mode="stopwatch" role="tab">Stopwatch</button>
+      <button class="tab" data-mode="timer" role="tab">Timer</button>
+    </div>
+
+    <!-- CLOCK -->
+    <section class="view" id="view-clock">
+      <div class="display mono" id="clockTime">--:--</div>
+      <div class="sub" id="clockDate">—</div>
+      <div class="row">
+        <button class="chip" id="fmtToggle">24h</button>
+        <button class="chip" id="secToggle">Seconds</button>
+      </div>
+    </section>
+
+    <!-- STOPWATCH -->
+    <section class="view" id="view-stopwatch" hidden>
+      <div class="display" id="swTime">00:00<span class="cs">.00</span></div>
+      <div class="controls">
+        <button class="btn primary" id="swStart">Start</button>
+        <button class="btn" id="swLap">Lap</button>
+        <button class="btn ghost" id="swReset">Reset</button>
+      </div>
+      <ol class="laps" id="swLaps"></ol>
+    </section>
+
+    <!-- TIMER -->
+    <section class="view" id="view-timer" hidden>
+      <div class="display" id="tmDisplay">
+        <div class="time-input" id="tmInput">
+          <input id="inH" inputmode="numeric" maxlength="2" aria-label="hours" value="0" />
+          <span class="colon">:</span>
+          <input id="inM" inputmode="numeric" maxlength="2" aria-label="minutes" value="05" />
+          <span class="colon">:</span>
+          <input id="inS" inputmode="numeric" maxlength="2" aria-label="seconds" value="00" />
+        </div>
+      </div>
+      <div class="sub" id="tmMsg" hidden>Time's up</div>
+      <div class="row" id="tmPresets">
+        <button class="chip" data-sec="60">1m</button>
+        <button class="chip" data-sec="180">3m</button>
+        <button class="chip" data-sec="300">5m</button>
+        <button class="chip" data-sec="600">10m</button>
+        <button class="chip" data-sec="1500">25m</button>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="tmStart">Start</button>
+        <button class="btn ghost" id="tmReset" hidden>Reset</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      // ---- persistence ----
+      function save(k, v) { try { localStorage.setItem('cylian.clock.' + k, JSON.stringify(v)); } catch (e) {} }
+      function load(k, d) {
+        try { var v = localStorage.getItem('cylian.clock.' + k); return v == null ? d : JSON.parse(v); }
+        catch (e) { return d; }
+      }
+
+      function pad(n) { n = '' + n; return n.length < 2 ? '0' + n : n; }
+      function setTitle(t) { if (document.title !== t) document.title = t; }
+      function setHTML(el, h) { if (el.innerHTML !== h) el.innerHTML = h; }
+      function setText(el, t) { if (el.textContent !== t) el.textContent = t; }
+
+      // mm:ss.cs (hours only when needed) — returns HTML with a small cs span
+      function fmtSW(ms) {
+        var cs = Math.floor((ms % 1000) / 10);
+        var s = Math.floor(ms / 1000);
+        var h = Math.floor(s / 3600); s -= h * 3600;
+        var m = Math.floor(s / 60); s -= m * 60;
+        var main = (h > 0 ? h + ':' + pad(m) : pad(m)) + ':' + pad(s);
+        return main + '<span class="cs">.' + pad(cs) + '</span>';
+      }
+      // whole seconds, rounded up — for countdown + titles
+      function fmtSecs(ms) {
+        var s = Math.ceil(ms / 1000);
+        var h = Math.floor(s / 3600); s -= h * 3600;
+        var m = Math.floor(s / 60); s -= m * 60;
+        return (h > 0 ? h + ':' + pad(m) : pad(m)) + ':' + pad(s);
+      }
+
+      // ---- audio ----
+      var actx;
+      function ac() {
+        if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+        if (actx && actx.state === 'suspended') actx.resume();
+        return actx;
+      }
+      function beep(delay) {
+        var c = ac(); if (!c) return;
+        var o = c.createOscillator(), g = c.createGain();
+        o.connect(g); g.connect(c.destination);
+        o.type = 'sine'; o.frequency.value = 880;
+        var t = c.currentTime + (delay || 0);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        o.start(t); o.stop(t + 0.5);
+      }
+      var alarmTimer = null;
+      function ring() { beep(0); beep(0.25); }
+      function startAlarm() {
+        if (alarmTimer) return;
+        ring();
+        alarmTimer = setInterval(ring, 1200);
+      }
+      function stopAlarm() {
+        if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = null; }
+      }
+
+      // ---- state ----
+      var mode = load('mode', 'clock');
+      var clk = load('clock', { h24: true, secs: false });
+      var sw = load('sw', { running: false, start: 0, acc: 0, laps: [] });
+      var tm = load('tm', { running: false, end: 0, remain: 0, dur: 300000, done: false });
+
+      // ---- elements ----
+      var tabs = [].slice.call(document.querySelectorAll('.tab'));
+      var views = {
+        clock: document.getElementById('view-clock'),
+        stopwatch: document.getElementById('view-stopwatch'),
+        timer: document.getElementById('view-timer')
+      };
+      var clockTime = document.getElementById('clockTime');
+      var clockDate = document.getElementById('clockDate');
+      var fmtToggle = document.getElementById('fmtToggle');
+      var secToggle = document.getElementById('secToggle');
+
+      var swTime = document.getElementById('swTime');
+      var swStart = document.getElementById('swStart');
+      var swLap = document.getElementById('swLap');
+      var swReset = document.getElementById('swReset');
+      var swLaps = document.getElementById('swLaps');
+
+      var tmDisplay = document.getElementById('tmDisplay');
+      var tmInput = document.getElementById('tmInput');
+      var tmMsg = document.getElementById('tmMsg');
+      var tmPresets = document.getElementById('tmPresets');
+      var tmStart = document.getElementById('tmStart');
+      var tmReset = document.getElementById('tmReset');
+      var inH = document.getElementById('inH');
+      var inM = document.getElementById('inM');
+      var inS = document.getElementById('inS');
+
+      // ---- mode ----
+      function setMode(m) {
+        mode = m; save('mode', m);
+        tabs.forEach(function (t) {
+          var on = t.getAttribute('data-mode') === m;
+          t.classList.toggle('is-active', on);
+          t.setAttribute('aria-selected', on);
+        });
+        views.clock.hidden = m !== 'clock';
+        views.stopwatch.hidden = m !== 'stopwatch';
+        views.timer.hidden = m !== 'timer';
+        if (m === 'stopwatch') renderLaps();
+      }
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () { setMode(t.getAttribute('data-mode')); });
+      });
+
+      // ---- clock ----
+      function renderClock() {
+        var now = new Date();
+        var o = { hour: '2-digit', minute: '2-digit', hour12: !clk.h24 };
+        if (clk.secs) o.second = '2-digit';
+        setText(clockTime, new Intl.DateTimeFormat([], o).format(now));
+        setText(clockDate, new Intl.DateTimeFormat([], {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        }).format(now));
+        setText(fmtToggle, clk.h24 ? '24h' : '12h');
+        secToggle.classList.toggle('is-on', clk.secs);
+        setTitle('Clock · Cylian');
+      }
+      fmtToggle.addEventListener('click', function () { clk.h24 = !clk.h24; save('clock', clk); });
+      secToggle.addEventListener('click', function () { clk.secs = !clk.secs; save('clock', clk); });
+
+      // ---- stopwatch ----
+      function swElapsed() { return sw.acc + (sw.running ? Date.now() - sw.start : 0); }
+      function swToggle() {
+        if (sw.running) { sw.acc = swElapsed(); sw.running = false; }
+        else { sw.start = Date.now(); sw.running = true; ac(); }
+        save('sw', sw);
+      }
+      function swLapFn() {
+        if (!sw.running && sw.acc === 0) return;
+        sw.laps.push(swElapsed()); save('sw', sw); renderLaps();
+      }
+      function swResetFn() {
+        sw = { running: false, start: 0, acc: 0, laps: [] };
+        save('sw', sw); renderLaps();
+      }
+      function renderLaps() {
+        var html = '', prev = 0;
+        sw.laps.forEach(function (t, i) {
+          var sp = t - prev; prev = t;
+          html = '<li><span class="n">Lap ' + (i + 1) + '</span>' +
+                 '<span class="sp">+' + fmtSW(sp) + '</span>' +
+                 '<span class="tt">' + fmtSW(t) + '</span></li>' + html;
+        });
+        swLaps.innerHTML = html;
+      }
+      function renderSW() {
+        var e = swElapsed();
+        setHTML(swTime, fmtSW(e));
+        setText(swStart, sw.running ? 'Pause' : (e > 0 ? 'Resume' : 'Start'));
+        swStart.classList.toggle('primary', !sw.running);
+        swLap.disabled = !sw.running;
+        swReset.disabled = sw.running || e === 0;
+        setTitle(sw.running ? fmtSecs(e) + ' · Stopwatch' : 'Stopwatch · Cylian');
+      }
+      swStart.addEventListener('click', swToggle);
+      swLap.addEventListener('click', swLapFn);
+      swReset.addEventListener('click', swResetFn);
+
+      // ---- timer ----
+      function tmRemaining() { return tm.running ? Math.max(0, tm.end - Date.now()) : tm.remain; }
+      function tmActive() { return tm.running || tm.done || tm.remain > 0; }
+
+      function inputsMs() {
+        var H = parseInt(inH.value, 10) || 0;
+        var M = parseInt(inM.value, 10) || 0;
+        var S = parseInt(inS.value, 10) || 0;
+        return ((H * 3600) + (M * 60) + S) * 1000;
+      }
+      function setInputs(ms) {
+        var tot = Math.round(ms / 1000);
+        inH.value = Math.floor(tot / 3600);
+        inM.value = pad(Math.floor((tot % 3600) / 60));
+        inS.value = pad(tot % 60);
+      }
+      function setInputsReadonly(ro) {
+        [inH, inM, inS].forEach(function (i) { i.readOnly = ro; i.tabIndex = ro ? -1 : 0; });
+      }
+      function startFrom(ms) {
+        if (ms <= 0) return;
+        stopAlarm();
+        tm.dur = ms; tm.remain = ms; tm.end = Date.now() + ms;
+        tm.running = true; tm.done = false; ac(); save('tm', tm);
+      }
+      function tmToggle() {
+        if (tm.done) return;
+        if (tm.running) { tm.remain = tmRemaining(); tm.running = false; }
+        else if (tm.remain > 0) { tm.end = Date.now() + tm.remain; tm.running = true; ac(); }
+        else { startFrom(inputsMs()); return; }
+        save('tm', tm);
+      }
+      function tmResetFn() {
+        stopAlarm();
+        tm.running = false; tm.done = false; tm.remain = 0;
+        save('tm', tm); setInputs(tm.dur || 0);
+      }
+      function finishTimer() {
+        if (tm.done) return;
+        tm.running = false; tm.remain = 0; tm.done = true; save('tm', tm);
+        startAlarm();
+      }
+      function renderTimer() {
+        var active = tmActive();
+        tmPresets.hidden = active;
+        tmMsg.hidden = !tm.done;
+        setInputsReadonly(active);
+        tmDisplay.classList.toggle('done', tm.done);
+        if (active) {
+          var rem = tm.done ? 0 : tmRemaining();
+          setInputs(rem);
+          tmStart.hidden = tm.done;
+          tmStart.textContent = tm.running ? 'Pause' : 'Resume';
+          tmStart.classList.toggle('primary', !tm.running);
+          tmReset.hidden = false;
+          setTitle((tm.done ? 'Done' : fmtSecs(rem)) + ' · Timer');
+        } else {
+          tmStart.hidden = false;
+          tmStart.textContent = 'Start';
+          tmStart.classList.add('primary');
+          tmReset.hidden = true;
+          setTitle('Timer · Cylian');
+        }
+      }
+      tmStart.addEventListener('click', tmToggle);
+      tmReset.addEventListener('click', tmResetFn);
+      tmPresets.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-sec]');
+        if (!b) return;
+        var ms = (+b.getAttribute('data-sec')) * 1000;
+        setInputs(ms); startFrom(ms);
+      });
+      // keep timer inputs numeric + sane
+      [inH, inM, inS].forEach(function (inp) {
+        inp.addEventListener('input', function () {
+          inp.value = inp.value.replace(/\D/g, '').slice(0, 2);
+        });
+        inp.addEventListener('blur', function () {
+          var n = parseInt(inp.value, 10) || 0;
+          if ((inp === inM || inp === inS) && n > 59) n = 59;
+          inp.value = inp === inH ? n : pad(n);
+        });
+        inp.addEventListener('focus', function () { inp.select(); });
+      });
+
+      // ---- main loop ----
+      function frame() {
+        if (tm.running && tmRemaining() <= 0) finishTimer();
+        if (mode === 'clock') renderClock();
+        else if (mode === 'stopwatch') renderSW();
+        else renderTimer();
+        requestAnimationFrame(frame);
+      }
+
+      // ---- keyboard ----
+      document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.key === ' ') {
+          e.preventDefault();
+          if (mode === 'stopwatch') swToggle();
+          else if (mode === 'timer') tmToggle();
+        } else if (e.key === 'l' || e.key === 'L') {
+          if (mode === 'stopwatch' && sw.running) swLapFn();
+        } else if (e.key === 'r' || e.key === 'R') {
+          if (mode === 'stopwatch') swResetFn();
+          else if (mode === 'timer') tmResetFn();
+        }
+      });
+
+      // resume audio (and re-arm the alarm) on the first interaction
+      document.addEventListener('pointerdown', function () {
+        ac();
+        if (tm.done) startAlarm();
+      });
+
+      // ---- init ----
+      if (!tmActive()) setInputs(tm.dur || 300000);
+      if (tm.done) startAlarm();
+      setMode(mode);
+      renderLaps();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+
+</body>
+</html>
