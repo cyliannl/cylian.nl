@@ -123,7 +123,17 @@
       margin-bottom: 0.4rem;
     }
 
-    .tools { list-style: none; }
+    .tools {
+      list-style: none;
+      position: relative;
+      /* pull out to the card edge then pad back, so the bleeding hover
+         highlight isn't clipped (and keeps its rounded corners) while
+         overflow:hidden still clips the collapse vertically */
+      margin: 0 calc(var(--bleed) * -1);
+      padding: 0 var(--bleed);
+      overflow: hidden;
+      transition: max-height 0.35s var(--ease);
+    }
     .tools a {
       display: flex;
       align-items: center;
@@ -151,6 +161,37 @@
       transform: translate(2px, -2px);
       color: var(--ink);
     }
+
+    .tools-more {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      width: calc(100% + var(--bleed) * 2);
+      margin: 0.4rem calc(var(--bleed) * -1) 0;
+      padding: 0.5rem var(--bleed);
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease);
+    }
+    .tools-more.show { display: flex; }
+    .tools-more:hover, .tools-more:focus-visible {
+      background: var(--hover);
+      color: var(--ink);
+      outline: none;
+    }
+    .tools-more .arrow {
+      color: var(--faint);
+      transition: transform 0.2s var(--ease), color 0.16s var(--ease);
+    }
+    .tools-more:hover .arrow, .tools-more:focus-visible .arrow { color: var(--ink); }
+    .tools-more[aria-expanded="true"] .arrow { transform: rotate(180deg); }
 
     .open-panel {
       margin: 1.6rem calc(var(--bleed) * -1) 0;
@@ -416,7 +457,7 @@
 
     <p class="label">Tools</p>
     <nav>
-      <ul class="tools">
+      <ul class="tools" id="toolsList">
         <li>
           <a href="https://cylian.nl/tools/clothing-extractor?ref=home" target="_blank" rel="noopener">
             <span class="t-main">
@@ -425,7 +466,20 @@
             <span class="arrow">↗</span>
           </a>
         </li>
+        <li>
+          <a href="clock.html?ref=home" target="_blank" rel="noopener">
+            <span class="t-main">
+              <span class="t-name">Clock</span>
+            </span>
+            <span class="arrow">↗</span>
+          </a>
+        </li>
       </ul>
+      <button class="tools-more" id="toolsMore" type="button"
+              aria-expanded="false" aria-controls="toolsList">
+        <span class="tools-more-label">More tools</span>
+        <span class="arrow">↓</span>
+      </button>
     </nav>
 
     <button class="open-panel" id="openPanel" aria-haspopup="dialog"
@@ -490,6 +544,72 @@
       }
       tick();
       setInterval(tick, 1000 * 15);
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var list = document.getElementById('toolsList');
+      var btn = document.getElementById('toolsMore');
+      if (!list || !btn) return;
+      var label = btn.querySelector('.tools-more-label');
+      var expanded = false;
+
+      // Randomize which tool sits on top (Fisher–Yates, re-appended in order).
+      (function shuffle() {
+        var kids = [].slice.call(list.children);
+        for (var i = kids.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = kids[i]; kids[i] = kids[j]; kids[j] = t;
+        }
+        kids.forEach(function (k) { list.appendChild(k); });
+      })();
+
+      function setMask(value) {
+        list.style.webkitMaskImage = value;
+        list.style.maskImage = value;
+      }
+
+      function apply(animate) {
+        if (list.children.length < 2) {           // nothing to collapse
+          btn.classList.remove('show');
+          list.style.maxHeight = '';
+          setMask('');
+          return;
+        }
+        btn.classList.add('show');
+        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (label) label.textContent = expanded ? 'Fewer tools' : 'More tools';
+
+        if (expanded) {
+          setMask('');
+          list.style.maxHeight = list.scrollHeight + 'px';
+          return;
+        }
+
+        // Collapsed: first tool in full + a clear peek of the next, fading out.
+        var second = list.children[1];
+        var firstBottom = second.offsetTop;                 // = full height of row 1
+        var peek = Math.min(second.offsetHeight * 0.6, 30); // how much of row 2 shows
+        var cap = firstBottom + peek;
+        var fadeStart = firstBottom + peek * 0.4;            // keep the peek's top solid
+        setMask('linear-gradient(to bottom, #000 ' + fadeStart + 'px, transparent ' + cap + 'px)');
+
+        if (animate) { list.style.maxHeight = list.scrollHeight + 'px'; void list.offsetHeight; }
+        list.style.maxHeight = cap + 'px';
+      }
+
+      // Drop the fixed height once expanded so the list can reflow freely.
+      list.addEventListener('transitionend', function (e) {
+        if (e.propertyName === 'max-height' && expanded) list.style.maxHeight = '';
+      });
+      btn.addEventListener('click', function () { expanded = !expanded; apply(true); });
+
+      apply(false);
+      window.addEventListener('resize', function () { if (!expanded) apply(false); });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { if (!expanded) apply(false); });
+      }
     })();
   </script>
 
