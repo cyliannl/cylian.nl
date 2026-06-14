@@ -1,5 +1,5 @@
 # Case Study — Internship at XAN IT / Quantum Campus
-**Bâle, Suisse · June 2025**
+**Basel, Switzerland · June 2025**
 
 ---
 
