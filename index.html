@@ -2,10 +2,221 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=https://dqsdqddqdza.my.canva.site/rapport-de-stage">
-  <title>Redirecting…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Website</title>
+  <style>
+    /* Color palette
+       --color-bg:      page background
+       --color-surface: card background
+       --color-accent:  brand accent color #2878e5
+       --color-text:    text on dark surfaces
+    */
+    :root {
+      --color-bg: #0b0b0b;
+      --color-surface: #141414;
+      --color-accent: #2878e5;
+      --color-text: #ffffff;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      margin: 0;
+    }
+
+    .cards {
+      display: flex;
+      justify-content: center;
+      gap: 2%;
+      max-width: 900px;
+      margin: 0 auto;
+      container-type: inline-size;
+    }
+
+    .card {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      max-width: 300px;
+      flex: 1;
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-text);
+      border-radius: 8% / 14.2%;
+      overflow: hidden;
+      container-type: inline-size;
+      transition: border-color 0.35s ease;
+      user-select: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+
+    .card:hover {
+      border-color: var(--color-accent);
+    }
+
+    .card-header {
+      position: absolute;
+      top: 9%;
+      left: 8%;
+      right: 8%;
+      display: flex;
+      align-items: center;
+      gap: 3%;
+    }
+
+    .card-header img {
+      width: 25%;
+      height: auto;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .card:hover .card-header img {
+      transform: rotate(-8deg) scale(1.08);
+    }
+
+    .card-header span {
+      color: var(--color-text);
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 7cqw;
+      white-space: nowrap;
+      text-align: left;
+      transition: font-weight 0.3s ease;
+    }
+
+    .card:hover .card-header span {
+      font-weight: 700;
+    }
+
+    .card-body {
+      position: absolute;
+      top: 45%;
+      left: 8%;
+      right: 8%;
+      bottom: 9%;
+      background-color: var(--color-bg);
+      border-radius: 8.8% / 30.3%;
+      display: flex;
+      align-items: center;
+      gap: 5cqw;
+      padding: 5cqw 7cqw;
+    }
+
+    .pfp-placeholder {
+      width: 23%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.4s ease;
+    }
+
+    .card:hover .pfp-placeholder {
+      transform: scale(1.1);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08),
+                  0 0 0 2px rgba(0, 228, 201, 0.6),
+                  0 0 14px rgba(0, 228, 201, 0.35);
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6%;
+    }
+
+    .username {
+      color: var(--color-text);
+      font-family: system-ui, sans-serif;
+      font-weight: 500;
+      font-size: 5.5cqw;
+      white-space: nowrap;
+      margin-top: -3%;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 2.5%;
+      color: var(--color-text);
+      font-family: system-ui, sans-serif;
+      font-size: 4.5cqw;
+      white-space: nowrap;
+    }
+
+    .stats .reviews {
+      margin-left: 3%;
+    }
+
+    .stats .thumb {
+      width: 5.5cqw;
+      height: 5.5cqw;
+      fill: rgb(0, 228, 201);
+      flex-shrink: 0;
+      transform-origin: center center;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .card:hover .stats .thumb {
+      transform: scale(1.2);
+    }
+
+    .stats .rating {
+      color: rgb(0, 228, 201);
+      font-weight: 600;
+      transform-origin: -30% center;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .card:hover .stats .rating {
+      transform: scale(1.2);
+    }
+
+    .stats .reviews {
+      color: var(--color-text-muted, #9aa0ad);
+      transition: filter 0.3s ease;
+    }
+
+    .card:hover .stats .reviews {
+      filter: blur(0.8px);
+    }
+
+    .footer {
+      background-color: var(--color-accent);
+      color: var(--color-text);
+      font-family: system-ui, sans-serif;
+      min-height: 120px;
+      padding: 2rem;
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting to <a href="https://dqsdqddqdza.my.canva.site/rapport-de-stage">the site</a>…</p>
+
+  <section class="cards">
+    <a class="card" href="https://www.eldorado.gg/users/6amcshop/reviews">
+      <div class="card-header">
+        <img src="eldo.webp" alt="">
+        <span>Trusted on multiple <br>major platforms</span>
+      </div>
+      <div class="card-body">
+        <img class="pfp-placeholder" src="pfp.webp" alt="">
+        <div class="profile-info">
+          <span class="username">6AmcShop</span>
+          <div class="stats">
+            <svg class="thumb" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 21h4V9H1v12zM23 10c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1.91l-.01-.01L23 10z"/>
+            </svg>
+            <span class="rating">99.1%</span>
+            <span class="reviews">200+ reviews</span>
+          </div>
+        </div>
+      </div>
+    </a>
+    <div class="card"></div>
+  </section>
+
+  <footer class="footer"></footer>
+
 </body>
 </html>
