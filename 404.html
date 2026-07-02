@@ -15,8 +15,7 @@
 
   if (parts[0] === 'talk') {
     var room = parts[1] || '';
-    sessionStorage.setItem('p2p_room', room);
-    window.location.replace('/talk/' + window.location.search + window.location.hash);
+    window.location.replace('/talk/?r=' + encodeURIComponent(room));
   } else {
     document.write('<p style="font-family:sans-serif">Page not found.</p>');
   }
