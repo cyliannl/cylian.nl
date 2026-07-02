@@ -217,7 +217,7 @@
 
 <header>
   <div class="header-row">
-    <div class="brand"><b>talk</b> — no server, no history, just this room</div>
+    <div class="brand"><b>talk</b> — no server, no history, end-to-end encrypted</div>
     <div class="room-controls">
       <span class="room-code mono" id="roomLabel">connecting…</span>
       <button id="copyBtn">copy link</button>
@@ -239,11 +239,10 @@
     <button type="submit" class="primary">send</button>
   </form>
 </main>
-<div class="note">messages exist only in these open tabs — closing everyone's tab deletes the conversation</div>
+<div class="note">messages are encrypted before they leave your browser — a relay routes them, but can't read them — and nothing is ever stored</div>
 
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script type="module">
-  import { joinRoom } from 'https://esm.run/trystero';
-
   // ---------- room resolution ----------
   function randomSlug(len = 24) {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -266,15 +265,34 @@
   // clean the address bar to /talk/<room> either way
   history.replaceState({}, '', '/talk/' + room);
   console.log('[talk] resolved room:', room);
-
   document.getElementById('roomLabel').textContent = room;
 
-  // ---------- WebRTC mesh via public discovery (no backend) ----------
-  const APP_ID = 'cylian-nl-talk-v1';
-  const trystero = joinRoom({ appId: APP_ID }, room);
-  const msgAction = trystero.makeAction('msg');
+  // ---------- crypto: derive a topic + an AES-GCM key from the room slug ----------
+  // The relay only ever sees the topic hash and ciphertext — never the slug, never plaintext.
+  async function sha256Hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function deriveKey(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return crypto.subtle.importKey('raw', buf, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+  function b64(bytes) { return btoa(String.fromCharCode(...bytes)); }
+  function unb64(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
 
-  const peers = new Map(); // peerId -> short label
+  const APP_ID = 'cylian-nl-talk-v2';
+  const topic = 'talk/' + await sha256Hex(APP_ID + '|topic|' + room);
+  const cryptoKey = await deriveKey(APP_ID + '|key|' + room);
+
+  async function encryptText(text) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(text));
+    return { iv: b64(iv), ct: b64(new Uint8Array(ct)) };
+  }
+  async function decryptPayload(ivB64, ctB64) {
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(ivB64) }, cryptoKey, unb64(ctB64));
+    return new TextDecoder().decode(pt);
+  }
 
   // ---------- UI refs ----------
   const log = document.getElementById('log');
@@ -282,8 +300,6 @@
   const form = document.getElementById('composer');
   const peerCountEl = document.getElementById('peerCount');
   const mesh = document.getElementById('mesh');
-
-  function shortId(id) { return id.slice(0, 5); }
 
   function addMsg(kind, text, who) {
     const el = document.createElement('div');
@@ -304,17 +320,18 @@
   }
 
   // ---------- mesh visualization ----------
+  const peers = new Map(); // clientId -> lastSeen timestamp
+
   function renderMesh() {
     const w = 120, h = 70, cx = 20, cy = 35;
     let svg = `<g class="node-you"><circle cx="${cx}" cy="${cy}" r="7"/><text x="${cx}" y="${cy+18}" text-anchor="middle">you</text></g>`;
     const ids = [...peers.keys()];
     const n = ids.length;
     ids.forEach((id, i) => {
-      const angle = n === 1 ? 0 : (i / Math.max(n - 1, 1)) * Math.PI - Math.PI / 2;
       const px = 95;
       const py = n === 1 ? cy : 12 + (i / Math.max(n - 1, 1)) * 46;
       svg = `<line class="link" data-peer="${id}" x1="${cx}" y1="${cy}" x2="${px}" y2="${py}"/>` + svg;
-      svg += `<g class="node-peer"><circle cx="${px}" cy="${py}" r="5.5"/><text x="${px}" y="${py < cy ? py-10 : py+16}" text-anchor="middle">${shortId(id)}</text></g>`;
+      svg += `<g class="node-peer"><circle cx="${px}" cy="${py}" r="5.5"/><text x="${px}" y="${py < cy ? py-10 : py+16}" text-anchor="middle">${id}</text></g>`;
     });
     mesh.setAttribute('viewBox', `0 0 ${w} ${h}`);
     mesh.innerHTML = svg;
@@ -329,32 +346,101 @@
 
   renderMesh();
 
-  // ---------- peer lifecycle ----------
-  trystero.onPeerJoin = peerId => {
-    peers.set(peerId, shortId(peerId));
-    peerCountEl.textContent = peers.size;
-    renderMesh();
-    addMsg('system', `peer ${shortId(peerId)} joined`);
-  };
+  // ---------- connection status banner ----------
+  function setStatus(text, kind) {
+    let el = document.getElementById('statusNotice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'statusNotice';
+      el.style.cssText = 'padding:10px 16px;font-family:Inter,sans-serif;font-size:13px;line-height:1.5;max-width:720px;margin:12px auto 0;border-radius:8px;';
+      document.querySelector('header').after(el);
+    }
+    const styles = {
+      warn: 'background:rgba(232,163,61,0.12);border:1px solid rgba(232,163,61,0.35);color:var(--text);',
+      ok:   'background:rgba(61,214,176,0.10);border:1px solid rgba(61,214,176,0.3);color:var(--text);'
+    };
+    el.style.cssText += styles[kind] || styles.warn;
+    el.textContent = text;
+    if (kind === 'ok') setTimeout(() => el.remove(), 2000);
+  }
 
-  trystero.onPeerLeave = peerId => {
-    peers.delete(peerId);
-    peerCountEl.textContent = peers.size;
-    renderMesh();
-    addMsg('system', `peer ${shortId(peerId)} left`);
-  };
+  // ---------- relay connection (WebSocket only — no WebRTC, nothing for Brave/extensions to block) ----------
+  const clientId = randomSlug(6);
+  setStatus('connecting to relay…', 'warn');
 
-  msgAction.onMessage = (data, { peerId }) => {
-    addMsg('peer', data, shortId(peerId));
-    pulseLink(peerId);
-  };
+  const mq = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+    clientId: 'talk-' + clientId,
+    clean: true,
+    reconnectPeriod: 2000
+  });
+
+  function sendPresence(type) {
+    mq.publish(topic, JSON.stringify({ type, from: clientId }));
+  }
+
+  mq.on('connect', () => {
+    setStatus('connected', 'ok');
+    mq.subscribe(topic);
+    sendPresence('hello');
+    setInterval(() => sendPresence('hello'), 5000);
+    setInterval(prunePeers, 4000);
+  });
+
+  mq.on('reconnect', () => setStatus('reconnecting to relay…', 'warn'));
+  mq.on('offline', () => setStatus('relay unreachable — retrying…', 'warn'));
+  mq.on('error', err => setStatus('relay error: ' + (err?.message || err), 'warn'));
+
+  mq.on('message', async (t, payload) => {
+    if (t !== topic) return;
+    let msg;
+    try { msg = JSON.parse(payload.toString()); } catch { return; }
+    if (!msg || msg.from === clientId) return;
+
+    if (msg.type === 'hello') {
+      const isNew = !peers.has(msg.from);
+      peers.set(msg.from, Date.now());
+      peerCountEl.textContent = peers.size;
+      renderMesh();
+      if (isNew) addMsg('system', `peer ${msg.from} joined`);
+    } else if (msg.type === 'bye') {
+      if (peers.has(msg.from)) {
+        peers.delete(msg.from);
+        peerCountEl.textContent = peers.size;
+        renderMesh();
+        addMsg('system', `peer ${msg.from} left`);
+      }
+    } else if (msg.type === 'msg') {
+      peers.set(msg.from, Date.now());
+      try {
+        const text = await decryptPayload(msg.iv, msg.ct);
+        addMsg('peer', text, msg.from);
+        pulseLink(msg.from);
+      } catch { /* not decryptable with our key — ignore */ }
+    }
+  });
+
+  function prunePeers() {
+    const now = Date.now();
+    let changed = false;
+    for (const [id, last] of peers) {
+      if (now - last > 15000) {
+        peers.delete(id);
+        changed = true;
+        addMsg('system', `peer ${id} timed out`);
+      }
+    }
+    if (changed) { peerCountEl.textContent = peers.size; renderMesh(); }
+  }
+
+  window.addEventListener('beforeunload', () => sendPresence('bye'));
 
   // ---------- composer ----------
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
-    msgAction.send(text);
+    const enc = await encryptText(text);
+    mq.publish(topic, JSON.stringify({ type: 'msg', from: clientId, iv: enc.iv, ct: enc.ct }));
     addMsg('me', text);
     peers.forEach((_, id) => pulseLink(id));
     input.value = '';
