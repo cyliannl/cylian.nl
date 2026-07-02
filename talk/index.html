@@ -242,7 +242,7 @@
 <div class="note">messages exist only in these open tabs — closing everyone's tab deletes the conversation</div>
 
 <script type="module">
-  import { joinRoom } from 'https://esm.sh/@trystero-p2p/torrent';
+  import { joinRoom } from 'https://esm.run/trystero';
 
   // ---------- room resolution ----------
   function randomSlug(len = 24) {
@@ -272,7 +272,7 @@
   // ---------- WebRTC mesh via public discovery (no backend) ----------
   const APP_ID = 'cylian-nl-talk-v1';
   const trystero = joinRoom({ appId: APP_ID }, room);
-  const [sendMsg, onMsg] = trystero.makeAction('msg');
+  const msgAction = trystero.makeAction('msg');
 
   const peers = new Map(); // peerId -> short label
 
@@ -330,31 +330,31 @@
   renderMesh();
 
   // ---------- peer lifecycle ----------
-  trystero.onPeerJoin(peerId => {
+  trystero.onPeerJoin = peerId => {
     peers.set(peerId, shortId(peerId));
     peerCountEl.textContent = peers.size;
     renderMesh();
     addMsg('system', `peer ${shortId(peerId)} joined`);
-  });
+  };
 
-  trystero.onPeerLeave(peerId => {
+  trystero.onPeerLeave = peerId => {
     peers.delete(peerId);
     peerCountEl.textContent = peers.size;
     renderMesh();
     addMsg('system', `peer ${shortId(peerId)} left`);
-  });
+  };
 
-  onMsg((data, peerId) => {
+  msgAction.onMessage = (data, { peerId }) => {
     addMsg('peer', data, shortId(peerId));
     pulseLink(peerId);
-  });
+  };
 
   // ---------- composer ----------
   form.addEventListener('submit', e => {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
-    sendMsg(text);
+    msgAction.send(text);
     addMsg('me', text);
     peers.forEach((_, id) => pulseLink(id));
     input.value = '';
