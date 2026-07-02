@@ -3,21 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>talk — peer to peer</title>
+<title>talk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0F1419;
-    --panel:#161D26;
-    --panel-2:#1C2530;
-    --border:#232D3A;
-    --amber:#E8A33D;
-    --blue:#5B8DEF;
-    --teal:#3DD6B0;
-    --text:#E7ECF2;
-    --muted:#7A8699;
-    --danger:#E85D75;
+    --bg:#0A0A0B;
+    --text:#E6E6E6;
+    --muted:#63666D;
+    --dim:#3A3C42;
+    --accent:#E8A33D;
+    --ok:#3DD6B0;
+    --warn:#E8A33D;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -25,113 +22,53 @@
     margin:0;
     background:var(--bg);
     color:var(--text);
-    font-family:'Inter',sans-serif;
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:13.5px;
+    line-height:1.55;
     display:flex;
     flex-direction:column;
     min-height:100vh;
   }
-  .mono{font-family:'JetBrains Mono',monospace;}
 
-  /* ---- header / mesh ---- */
   header{
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
+    border-bottom:1px solid var(--dim);
     padding:14px 20px;
-  }
-  .header-row{
     display:flex;
-    align-items:center;
+    align-items:baseline;
     justify-content:space-between;
     gap:12px;
     flex-wrap:wrap;
   }
-  .brand{
-    font-family:'JetBrains Mono',monospace;
-    font-size:14px;
-    letter-spacing:0.02em;
+  .path{color:var(--muted);}
+  .path b{color:var(--text);font-weight:600;}
+  .room{color:var(--text);}
+  .actions{display:flex;gap:14px;}
+  .actions a{
     color:var(--muted);
-  }
-  .brand b{color:var(--text);font-weight:600;}
-  .room-controls{
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .room-code{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--amber);
-    background:rgba(232,163,61,0.08);
-    border:1px solid rgba(232,163,61,0.25);
-    padding:5px 10px;
-    border-radius:6px;
-    max-width:220px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
-  button{
-    font-family:'Inter',sans-serif;
-    font-size:12.5px;
-    font-weight:500;
-    border-radius:6px;
-    border:1px solid var(--border);
-    background:var(--panel-2);
-    color:var(--text);
-    padding:6px 12px;
     cursor:pointer;
-    transition:border-color .15s ease, background .15s ease;
+    text-decoration:none;
+    border-bottom:1px dotted var(--dim);
   }
-  button:hover{border-color:var(--amber);}
-  button:active{transform:translateY(1px);}
-  button.primary{
-    background:var(--blue);
-    border-color:var(--blue);
-    color:#0F1419;
-    font-weight:600;
-  }
-  button.primary:hover{filter:brightness(1.08);}
-
-  /* ---- mesh visualization ---- */
-  .mesh-wrap{
-    margin-top:12px;
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  #mesh{
-    flex:0 0 auto;
-    overflow:visible;
-  }
-  .mesh-status{
-    font-family:'JetBrains Mono',monospace;
-    font-size:11.5px;
+  .actions a:hover{color:var(--accent);border-color:var(--accent);}
+  .status{
     color:var(--muted);
+    font-size:12px;
   }
-  .mesh-status .n{color:var(--teal);font-weight:600;}
-  .link{
-    stroke:var(--border);
-    stroke-width:1.4;
-    transition:stroke .3s ease, stroke-width .3s ease;
+  .status .dot{
+    display:inline-block;
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--dim);
+    margin-right:6px;
   }
-  .link.pulse{
-    stroke:var(--teal);
-    stroke-width:2.2;
-  }
-  .node-you circle{fill:var(--blue);}
-  .node-peer circle{fill:var(--teal);}
-  .node text{
-    font-family:'JetBrains Mono',monospace;
-    font-size:9px;
-    fill:var(--muted);
-  }
+  .status.live .dot{background:var(--ok);}
+  .status.warn .dot{background:var(--warn);}
 
-  /* ---- chat ---- */
   main{
     flex:1;
     display:flex;
     flex-direction:column;
-    max-width:720px;
+    max-width:760px;
     width:100%;
     margin:0 auto;
     padding:0 20px;
@@ -140,106 +77,93 @@
   #log{
     flex:1;
     overflow-y:auto;
-    padding:20px 0;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
+    padding:18px 0;
   }
-  .msg{
-    max-width:78%;
-    padding:9px 13px;
-    border-radius:10px;
-    font-size:14.5px;
-    line-height:1.4;
+  .line{
+    padding:2px 0;
     word-wrap:break-word;
+    white-space:pre-wrap;
   }
-  .msg .meta{
-    font-family:'JetBrains Mono',monospace;
-    font-size:10px;
-    color:var(--muted);
-    margin-bottom:3px;
-    display:block;
+  .line .t{color:var(--dim);}
+  .line .who{font-weight:600;}
+  .line.me .who{color:var(--accent);}
+  .line.peer .who{color:var(--text);}
+  .line.system{color:var(--muted);}
+  .line a.file{
+    color:var(--ok);
+    text-decoration:none;
+    border-bottom:1px dotted var(--ok);
   }
-  .msg.me{
-    align-self:flex-end;
-    background:rgba(91,141,239,0.15);
-    border:1px solid rgba(91,141,239,0.3);
-    border-bottom-right-radius:3px;
-  }
-  .msg.peer{
-    align-self:flex-start;
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-bottom-left-radius:3px;
-  }
-  .msg.system{
-    align-self:center;
-    background:none;
-    border:none;
-    color:var(--muted);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11.5px;
-    padding:2px;
-  }
+  .line a.file:hover{opacity:0.8;}
 
   form#composer{
     display:flex;
-    gap:8px;
-    padding:14px 0 20px;
-    border-top:1px solid var(--border);
+    align-items:center;
+    gap:10px;
+    padding:12px 0 18px;
+    border-top:1px solid var(--dim);
   }
+  .prompt{color:var(--accent);}
   #input{
     flex:1;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
+    background:none;
+    border:none;
     color:var(--text);
-    font-family:'Inter',sans-serif;
-    font-size:14.5px;
-    padding:10px 14px;
+    font-family:inherit;
+    font-size:13.5px;
     outline:none;
   }
-  #input:focus{border-color:var(--amber);}
+  #input::placeholder{color:var(--dim);}
+  #fileLabel{
+    color:var(--muted);
+    cursor:pointer;
+    border-bottom:1px dotted var(--dim);
+  }
+  #fileLabel:hover{color:var(--accent);border-color:var(--accent);}
+  #fileInput{display:none;}
+  button{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-family:inherit;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  button:hover{color:var(--accent);}
 
   .note{
     text-align:center;
-    font-family:'JetBrains Mono',monospace;
-    font-size:10.5px;
-    color:var(--muted);
+    color:var(--dim);
+    font-size:11px;
     padding-bottom:14px;
   }
 
   ::-webkit-scrollbar{width:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  ::-webkit-scrollbar-thumb{background:var(--dim);border-radius:4px;}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="header-row">
-    <div class="brand"><b>talk</b> — no server, no history, end-to-end encrypted</div>
-    <div class="room-controls">
-      <span class="room-code mono" id="roomLabel">connecting…</span>
-      <button id="copyBtn">copy link</button>
-      <button id="newBtn">new room</button>
-    </div>
-  </div>
-  <div class="mesh-wrap">
-    <svg id="mesh" width="120" height="70" viewBox="0 0 120 70"></svg>
-    <div class="mesh-status mono">
-      <span class="n" id="peerCount">0</span> peer(s) connected
-    </div>
-  </div>
+  <span class="path">~/talk/<span class="room" id="roomLabel">…</span></span>
+  <span class="actions">
+    <a id="copyBtn">copy link</a>
+    <a id="newBtn">new room</a>
+  </span>
+  <span class="status" id="statusEl"><span class="dot"></span><span id="statusText">connecting</span> · <span id="peerCount">0</span> peer(s)</span>
 </header>
 
 <main>
   <div id="log"></div>
   <form id="composer">
-    <input id="input" class="mono" autocomplete="off" placeholder="message…" maxlength="2000">
-    <button type="submit" class="primary">send</button>
+    <span class="prompt">&gt;</span>
+    <input id="input" autocomplete="off" placeholder="message" maxlength="4000">
+    <label id="fileLabel" for="fileInput">+file</label>
+    <input type="file" id="fileInput">
+    <button type="submit">send</button>
   </form>
 </main>
-<div class="note">messages are encrypted before they leave your browser — a relay routes them, but can't read them — and nothing is ever stored</div>
+<div class="note">encrypted before it leaves your browser · nothing is stored · files capped at 20MB</div>
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script type="module">
@@ -253,22 +177,16 @@
   }
 
   let room = new URLSearchParams(location.search).get('r');
-
   if (!room) {
-    // direct hit on /talk/ or /talk/index.html with no slug handed off
     const parts = location.pathname.split('/').filter(Boolean);
     room = parts[1] || '';
   }
-  if (!room) {
-    room = randomSlug();
-  }
-  // clean the address bar to /talk/<room> either way
+  if (!room) room = randomSlug();
   history.replaceState({}, '', '/talk/' + room);
   console.log('[talk] resolved room:', room);
   document.getElementById('roomLabel').textContent = room;
 
-  // ---------- crypto: derive a topic + an AES-GCM key from the room slug ----------
-  // The relay only ever sees the topic hash and ciphertext — never the slug, never plaintext.
+  // ---------- crypto: derive topic + AES-GCM key from the room slug ----------
   async function sha256Hex(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -277,118 +195,110 @@
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return crypto.subtle.importKey('raw', buf, 'AES-GCM', false, ['encrypt', 'decrypt']);
   }
-  function b64(bytes) { return btoa(String.fromCharCode(...bytes)); }
+  function b64(bytes) {
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
   function unb64(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
 
   const APP_ID = 'cylian-nl-talk-v2';
   const topic = 'talk/' + await sha256Hex(APP_ID + '|topic|' + room);
   const cryptoKey = await deriveKey(APP_ID + '|key|' + room);
 
-  async function encryptText(text) {
+  async function encryptBytes(bytes) {
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(text));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, bytes);
     return { iv: b64(iv), ct: b64(new Uint8Array(ct)) };
   }
-  async function decryptPayload(ivB64, ctB64) {
+  async function decryptToBytes(ivB64, ctB64) {
     const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(ivB64) }, cryptoKey, unb64(ctB64));
-    return new TextDecoder().decode(pt);
+    return new Uint8Array(pt);
   }
+  const enc = new TextEncoder(), dec = new TextDecoder();
 
   // ---------- UI refs ----------
   const log = document.getElementById('log');
   const input = document.getElementById('input');
   const form = document.getElementById('composer');
+  const fileInput = document.getElementById('fileInput');
   const peerCountEl = document.getElementById('peerCount');
-  const mesh = document.getElementById('mesh');
+  const statusEl = document.getElementById('statusEl');
+  const statusText = document.getElementById('statusText');
 
-  function addMsg(kind, text, who) {
+  function timeNow() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+  function addLine(kind, who, bodyEl) {
     const el = document.createElement('div');
-    el.className = 'msg ' + kind;
+    el.className = 'line ' + kind;
     if (kind === 'system') {
-      el.textContent = text;
+      el.textContent = bodyEl;
     } else {
-      const meta = document.createElement('span');
-      meta.className = 'meta';
-      meta.textContent = (kind === 'me' ? 'you' : who) + ' · ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      el.appendChild(meta);
-      const body = document.createElement('div');
-      body.textContent = text;
-      el.appendChild(body);
+      const t = document.createElement('span'); t.className = 't'; t.textContent = timeNow() + ' ';
+      const w = document.createElement('span'); w.className = 'who'; w.textContent = (kind === 'me' ? 'you' : who) + ': ';
+      el.appendChild(t); el.appendChild(w);
+      if (typeof bodyEl === 'string') el.appendChild(document.createTextNode(bodyEl));
+      else el.appendChild(bodyEl);
     }
     log.appendChild(el);
     log.scrollTop = log.scrollHeight;
+    return el;
   }
 
-  // ---------- mesh visualization ----------
-  const peers = new Map(); // clientId -> lastSeen timestamp
-
-  function renderMesh() {
-    const w = 120, h = 70, cx = 20, cy = 35;
-    let svg = `<g class="node-you"><circle cx="${cx}" cy="${cy}" r="7"/><text x="${cx}" y="${cy+18}" text-anchor="middle">you</text></g>`;
-    const ids = [...peers.keys()];
-    const n = ids.length;
-    ids.forEach((id, i) => {
-      const px = 95;
-      const py = n === 1 ? cy : 12 + (i / Math.max(n - 1, 1)) * 46;
-      svg = `<line class="link" data-peer="${id}" x1="${cx}" y1="${cy}" x2="${px}" y2="${py}"/>` + svg;
-      svg += `<g class="node-peer"><circle cx="${px}" cy="${py}" r="5.5"/><text x="${px}" y="${py < cy ? py-10 : py+16}" text-anchor="middle">${id}</text></g>`;
-    });
-    mesh.setAttribute('viewBox', `0 0 ${w} ${h}`);
-    mesh.innerHTML = svg;
+  function fmtSize(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  function pulseLink(peerId) {
-    const line = mesh.querySelector(`line[data-peer="${peerId}"]`);
-    if (!line) return;
-    line.classList.add('pulse');
-    setTimeout(() => line.classList.remove('pulse'), 350);
-  }
-
-  renderMesh();
-
-  // ---------- connection status banner ----------
   function setStatus(text, kind) {
-    let el = document.getElementById('statusNotice');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'statusNotice';
-      el.style.cssText = 'padding:10px 16px;font-family:Inter,sans-serif;font-size:13px;line-height:1.5;max-width:720px;margin:12px auto 0;border-radius:8px;';
-      document.querySelector('header').after(el);
-    }
-    const styles = {
-      warn: 'background:rgba(232,163,61,0.12);border:1px solid rgba(232,163,61,0.35);color:var(--text);',
-      ok:   'background:rgba(61,214,176,0.10);border:1px solid rgba(61,214,176,0.3);color:var(--text);'
-    };
-    el.style.cssText += styles[kind] || styles.warn;
-    el.textContent = text;
-    if (kind === 'ok') setTimeout(() => el.remove(), 2000);
+    statusText.textContent = text;
+    statusEl.className = 'status' + (kind ? ' ' + kind : '');
   }
 
-  // ---------- relay connection (WebSocket only — no WebRTC, nothing for Brave/extensions to block) ----------
+  // ---------- presence ----------
+  const peers = new Map(); // clientId -> lastSeen
   const clientId = randomSlug(6);
-  setStatus('connecting to relay…', 'warn');
 
+  function prunePeers() {
+    const now = Date.now();
+    let changed = false;
+    for (const [id, last] of peers) {
+      if (now - last > 15000) {
+        peers.delete(id);
+        changed = true;
+        addLine('system', null, `— ${id} left —`);
+      }
+    }
+    if (changed) peerCountEl.textContent = peers.size;
+  }
+
+  // ---------- relay connection ----------
+  setStatus('connecting…', 'warn');
   const mq = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
     clientId: 'talk-' + clientId,
     clean: true,
     reconnectPeriod: 2000
   });
 
-  function sendPresence(type) {
-    mq.publish(topic, JSON.stringify({ type, from: clientId }));
+  function publish(payload, qos = 0) {
+    mq.publish(topic, JSON.stringify(payload), { qos });
   }
+  function sendPresence(type) { publish({ type, from: clientId }); }
 
   mq.on('connect', () => {
-    setStatus('connected', 'ok');
+    setStatus('live', 'live');
     mq.subscribe(topic);
     sendPresence('hello');
     setInterval(() => sendPresence('hello'), 5000);
     setInterval(prunePeers, 4000);
   });
+  mq.on('reconnect', () => setStatus('reconnecting…', 'warn'));
+  mq.on('offline', () => setStatus('offline — retrying…', 'warn'));
+  mq.on('error', err => setStatus('relay error', 'warn'));
 
-  mq.on('reconnect', () => setStatus('reconnecting to relay…', 'warn'));
-  mq.on('offline', () => setStatus('relay unreachable — retrying…', 'warn'));
-  mq.on('error', err => setStatus('relay error: ' + (err?.message || err), 'warn'));
+  // ---------- incoming file reassembly ----------
+  const incoming = new Map(); // fileId -> {name, mime, size, iv, chunks: [], total}
 
   mq.on('message', async (t, payload) => {
     if (t !== topic) return;
@@ -400,66 +310,131 @@
       const isNew = !peers.has(msg.from);
       peers.set(msg.from, Date.now());
       peerCountEl.textContent = peers.size;
-      renderMesh();
-      if (isNew) addMsg('system', `peer ${msg.from} joined`);
-    } else if (msg.type === 'bye') {
+      if (isNew) addLine('system', null, `— ${msg.from} joined —`);
+      return;
+    }
+    if (msg.type === 'bye') {
       if (peers.has(msg.from)) {
         peers.delete(msg.from);
         peerCountEl.textContent = peers.size;
-        renderMesh();
-        addMsg('system', `peer ${msg.from} left`);
+        addLine('system', null, `— ${msg.from} left —`);
       }
-    } else if (msg.type === 'msg') {
-      peers.set(msg.from, Date.now());
+      return;
+    }
+
+    peers.set(msg.from, Date.now());
+
+    if (msg.type === 'msg') {
       try {
-        const text = await decryptPayload(msg.iv, msg.ct);
-        addMsg('peer', text, msg.from);
-        pulseLink(msg.from);
-      } catch { /* not decryptable with our key — ignore */ }
+        const text = dec.decode(await decryptToBytes(msg.iv, msg.ct));
+        addLine('peer', msg.from, text);
+      } catch { /* undecryptable, ignore */ }
+      return;
+    }
+
+    if (msg.type === 'file-start') {
+      incoming.set(msg.fileId, {
+        name: msg.name, mime: msg.mime, size: msg.size, iv: msg.iv,
+        total: msg.total, chunks: new Array(msg.total), from: msg.from,
+        lineEl: addLine('peer', msg.from, `↓ receiving ${msg.name} (${fmtSize(msg.size)})…`)
+      });
+      return;
+    }
+    if (msg.type === 'file-chunk') {
+      const f = incoming.get(msg.fileId);
+      if (!f) return;
+      f.chunks[msg.index] = msg.data;
+      const got = f.chunks.filter(Boolean).length;
+      f.lineEl.lastChild.textContent = `↓ receiving ${f.name} (${fmtSize(f.size)})… ${Math.round(got / f.total * 100)}%`;
+      if (got === f.total) {
+        try {
+          const ctB64 = f.chunks.join('');
+          const bytes = await decryptToBytes(f.iv, ctB64);
+          const blob = new Blob([bytes], { type: f.mime || 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          f.lineEl.textContent = '';
+          const t = document.createElement('span'); t.className = 't'; t.textContent = timeNow() + ' ';
+          const w = document.createElement('span'); w.className = 'who'; w.textContent = f.from + ': ';
+          const a = document.createElement('a');
+          a.className = 'file'; a.href = url; a.download = f.name;
+          a.textContent = `↓ ${f.name} (${fmtSize(f.size)}) — download`;
+          f.lineEl.appendChild(t); f.lineEl.appendChild(w); f.lineEl.appendChild(a);
+        } catch {
+          f.lineEl.textContent = `↓ ${f.name} — failed to decrypt`;
+        }
+        incoming.delete(msg.fileId);
+      }
     }
   });
-
-  function prunePeers() {
-    const now = Date.now();
-    let changed = false;
-    for (const [id, last] of peers) {
-      if (now - last > 15000) {
-        peers.delete(id);
-        changed = true;
-        addMsg('system', `peer ${id} timed out`);
-      }
-    }
-    if (changed) { peerCountEl.textContent = peers.size; renderMesh(); }
-  }
 
   window.addEventListener('beforeunload', () => sendPresence('bye'));
 
-  // ---------- composer ----------
+  // ---------- send text ----------
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
-    const enc = await encryptText(text);
-    mq.publish(topic, JSON.stringify({ type: 'msg', from: clientId, iv: enc.iv, ct: enc.ct }));
-    addMsg('me', text);
-    peers.forEach((_, id) => pulseLink(id));
-    input.value = '';
+    if (text) {
+      const e2 = await encryptBytes(enc.encode(text));
+      publish({ type: 'msg', from: clientId, iv: e2.iv, ct: e2.ct });
+      addLine('me', null, text);
+      input.value = '';
+      return;
+    }
+    if (fileInput.files[0]) sendFile(fileInput.files[0]);
   });
+
+  // ---------- send file (chunked) ----------
+  const MAX_FILE_SIZE = 20 * 1024 * 1024;
+  const CHUNK_B64_LEN = 64000; // ~48KB decoded per chunk, safely under broker's packet cap
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) sendFile(fileInput.files[0]);
+  });
+
+  async function sendFile(file) {
+    fileInput.value = '';
+    if (file.size > MAX_FILE_SIZE) {
+      addLine('system', null, `— ${file.name} is too large (max ${fmtSize(MAX_FILE_SIZE)}) —`);
+      return;
+    }
+    const fileId = randomSlug(10);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const e2 = await encryptBytes(bytes);
+    const total = Math.ceil(e2.ct.length / CHUNK_B64_LEN);
+
+    const lineEl = addLine('me', null, `↑ sending ${file.name} (${fmtSize(file.size)})… 0%`);
+    publish({ type: 'file-start', from: clientId, fileId, name: file.name, mime: file.type, size: file.size, iv: e2.iv, total }, 1);
+
+    for (let i = 0; i < total; i++) {
+      const chunk = e2.ct.slice(i * CHUNK_B64_LEN, (i + 1) * CHUNK_B64_LEN);
+      publish({ type: 'file-chunk', from: clientId, fileId, index: i, data: chunk }, 1);
+      lineEl.lastChild.textContent = `↑ sending ${file.name} (${fmtSize(file.size)})… ${Math.round((i + 1) / total * 100)}%`;
+      await new Promise(r => setTimeout(r, 15)); // pace chunks so the broker doesn't drop a burst
+    }
+
+    const url = URL.createObjectURL(file);
+    lineEl.textContent = '';
+    const t = document.createElement('span'); t.className = 't'; t.textContent = timeNow() + ' ';
+    const w = document.createElement('span'); w.className = 'who'; w.textContent = 'you: ';
+    const a = document.createElement('a');
+    a.className = 'file'; a.href = url; a.download = file.name;
+    a.textContent = `↑ ${file.name} (${fmtSize(file.size)}) — sent`;
+    lineEl.appendChild(t); lineEl.appendChild(w); lineEl.appendChild(a);
+  }
 
   // ---------- header actions ----------
   document.getElementById('copyBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(location.href);
-    const btn = document.getElementById('copyBtn');
-    const original = btn.textContent;
-    btn.textContent = 'copied';
-    setTimeout(() => btn.textContent = original, 1200);
+    const el = document.getElementById('copyBtn');
+    const original = el.textContent;
+    el.textContent = 'copied';
+    setTimeout(() => el.textContent = original, 1200);
   });
-
   document.getElementById('newBtn').addEventListener('click', () => {
     location.href = '/talk/' + randomSlug();
   });
 
-  addMsg('system', `room "${room}" — waiting for peers to connect…`);
+  addLine('system', null, `— room ${room} — waiting for peers —`);
 </script>
 </body>
 </html>
