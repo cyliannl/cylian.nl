@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Not found</title>
+</head>
+<body>
+<script>
+  // GitHub Pages has no real server-side routing, so any URL that isn't
+  // a literal file (like /talk/<random-slug>) lands here. If it's a
+  // /talk/ link, hand the slug to /talk/index.html and let it take over.
+  // Anything else just gets a plain "not found".
+  var path = window.location.pathname;
+  var parts = path.split('/').filter(Boolean); // e.g. ["talk", "fkdsjgih78..."]
+
+  if (parts[0] === 'talk') {
+    var room = parts[1] || '';
+    window.location.replace('/talk/?r=' + encodeURIComponent(room));
+  } else {
+    document.write('<p style="font-family:sans-serif">Page not found.</p>');
+  }
+</script>
+</body>
+</html>
