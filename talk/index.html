@@ -242,7 +242,7 @@
 <div class="note">messages exist only in these open tabs — closing everyone's tab deletes the conversation</div>
 
 <script type="module">
-  import { joinRoom } from 'https://esm.sh/trystero/torrent';
+  import { joinRoom } from 'https://esm.sh/@trystero-p2p/torrent';
 
   // ---------- room resolution ----------
   function randomSlug(len = 24) {
@@ -253,20 +253,19 @@
     return s;
   }
 
-  let room = sessionStorage.getItem('p2p_room');
-  sessionStorage.removeItem('p2p_room');
+  let room = new URLSearchParams(location.search).get('r');
 
   if (!room) {
-    // direct hit on /talk/ or /talk/index.html with no slug in path
+    // direct hit on /talk/ or /talk/index.html with no slug handed off
     const parts = location.pathname.split('/').filter(Boolean);
     room = parts[1] || '';
   }
   if (!room) {
     room = randomSlug();
-    history.replaceState({}, '', '/talk/' + room);
-  } else {
-    history.replaceState({}, '', '/talk/' + room);
   }
+  // clean the address bar to /talk/<room> either way
+  history.replaceState({}, '', '/talk/' + room);
+  console.log('[talk] resolved room:', room);
 
   document.getElementById('roomLabel').textContent = room;
 
